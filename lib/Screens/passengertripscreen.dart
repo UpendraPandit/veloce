@@ -1,5 +1,9 @@
 import 'dart:async';
+import 'package:pinput/pinput.dart';
 import 'package:provider/provider.dart';
+import 'package:veloce/Screens/passenger.dart';
+import 'package:veloce/Screens/splashscreen.dart';
+import 'package:veloce/passenger_popup.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -11,13 +15,20 @@ import '../Helper/HelperVariables.dart';
 import 'dart:math';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:veloce/Consts/constants.dart';
+import '../api_otp_methods.dart';
+import 'pilotripscreen.dart';
+import 'option.dart';
+
+var showOTP = false;
+List<LatLng> polylineCoordinate = [];
 
 class PassengerTrip extends StatefulWidget {
   static var id = 'PassengerTripScreen';
   final int? phone;
   final String? destiname;
+  final waypoint;
 
-  const PassengerTrip({this.destiname, this.phone});
+  const PassengerTrip({this.destiname, this.phone, this.waypoint});
 
   @override
   _PassengerTripState createState() => _PassengerTripState();
@@ -33,7 +44,7 @@ class _PassengerTripState extends State<PassengerTrip> {
   var Othername;
 
   void setLocations() {}
-  WebSocketChannel? channel;//Changed the var channel to WebSocketChannel
+  WebSocketChannel? channel; //Changed the var channel to WebSocketChannel
   var stream;
   double distance = 0;
   double sum = 0;
@@ -50,40 +61,12 @@ class _PassengerTripState extends State<PassengerTrip> {
       });
     });
   }
- @override
-  void dispose() {
 
+  @override
+  void dispose() {
     // TODO: implement dispose
     // googleMapController!.dispose();
     super.dispose();
-  }
-  void getPolyPoints(double dlat, double dlong) async {
-    polylineCoordinates.clear();
-    PolylinePoints polylinePoints = PolylinePoints();
-    PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
-      map_api_key,
-      PointLatLng(passengerCurrentLocation!.latitude!,
-          passengerCurrentLocation!.longitude!),
-      PointLatLng(dlat, dlong),
-      travelMode: TravelMode.driving,
-    );
-    if (result.points.isNotEmpty) {
-      for (var point in result.points) {
-        polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-      }
-      sum = 0;
-      for (int i = 0; i < polylineCoordinates.length - 1; i++) {
-        sum += calculateDistance(
-            polylineCoordinates[i].latitude,
-            polylineCoordinates[i].longitude,
-            polylineCoordinates[i + 1].latitude,
-            polylineCoordinates[i + 1].longitude);
-      }
-      distance = double.parse(sum.toStringAsFixed(2));
-       // var val=getDistance();
-      // print('The distance is $val');
-
-    }
   }
 
   double calculateDistance(lat1, lon1, lat2, lon2) {
@@ -94,35 +77,87 @@ class _PassengerTripState extends State<PassengerTrip> {
     return 12742 * asin(sqrt(a));
   }
 
+  double ans = 0;
+  double end = 0;
+  int ent = 0;
+  int once = 0;
+
+  void getPolyPoint(
+      double slat, double slong, double dlat, double dlong) async {
+    if (once == 1) return;
+    once = 1;
+    print("The value of once is:$once");
+    print("Trying to print runtime type");
+    // print(widget.waypoint.longitude);
+    print(widget.waypoint[0].runtimeType);
+
+    polylineCoordinate.clear();
+    PolylinePoints polylinePoints = PolylinePoints();
+    PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+      map_api_key,
+      PointLatLng(slat, slong),
+      PointLatLng(dlat, dlong),
+      travelMode: TravelMode.driving,
+      wayPoints: [
+        PolylineWayPoint(
+            location: (widget.waypoint[0] == 0 && widget.waypoint[1] == 0)
+                ? ""
+                : "${widget.waypoint[0]},${widget.waypoint[1]}",
+            stopOver: false),
+      ],
+    );
+    if (result.points.isNotEmpty) {
+      for (var point in result.points) {
+        polylineCoordinate.add(LatLng(point.latitude, point.longitude));
+      }
+    }
+  }
+
   void getlocations() async {
     Location location = Location();
-
-
-location.getLocation().then((location)async {
-  passengerCurrentLocation = location;
-  print("Location $location");
-  print("passengerLocation $passengerCurrentLocation");
-  print("${widget.phone}+Helpervearoanles");
-  channel!.sink.add(jsonEncode({
-    'to': widget.phone,
-    'location': [location.latitude,location.longitude]
-  }));
-});
-    // googleMapController = await _mapController.future;
-    location.onLocationChanged.listen((newLoc) {
-
-      //newLoc.latitude,newLoc.longitude
+    // if(!mounted)return;
+    //used await here
+    await location.getLocation().then((location) async {
+      passengerCurrentLocation = location;
+      print("Location $location");
+      print("passengerLocation $passengerCurrentLocation");
+      print("${widget.phone}+Helpervearoanles");
       channel!.sink.add(jsonEncode({
         'to': widget.phone,
-        'location': [newLoc.latitude,newLoc.longitude]
+        'location': [location.latitude, location.longitude]
+      }));
+    });
+    // googleMapController = await _mapController.future;
+
+    location.onLocationChanged.listen((newLoc) {
+      if (!mounted) return;
+      channel!.sink.add(jsonEncode({
+        'to': widget.phone,
+        'location': [newLoc.latitude, newLoc.longitude]
       }));
       //commented setState
       // setState(() {
-        passengerCurrentLocation = newLoc;
+      passengerCurrentLocation = newLoc;
+      ans = calculateDistance(passengerCurrentLocation!.latitude!,
+          passengerCurrentLocation!.longitude!, data[0], data[1]);
+      end = calculateDistance(
+          passengerCurrentLocation!.latitude!,
+          passengerCurrentLocation!.longitude!,
+          PassengerScreen.des.latitude,
+          PassengerScreen.des.longitude);
+
+      if (!mounted) return;
+      if (ans <= 0.075 && !rideStarted) {
+        setState(() {
+          showOTP = true;
+          print("Printing the widget.phone ${widget.phone!}");
+        });
+      } else if (end <= 0.075) {
+        _EndDialog();
+      }
       // });
     });
   }
-
 
   void initailizeWebsocket() async {
     channel = WebSocketChannel.connect(
@@ -139,7 +174,7 @@ location.getLocation().then((location)async {
     //   print(event.runtimeType);
     //
     // });
- print("exitted websocekt method ");
+    print("exitted websocekt method ");
   }
 
   Future<void> deleteFromIds(int phone) async {
@@ -147,8 +182,6 @@ location.getLocation().then((location)async {
         .get(Uri.parse('http://139.59.44.53/deleteFromIds?phone=$phone'));
     print(response.body);
   }
-
-
 
   Future<void> closeSocket(int phone) async {
     var response = await http
@@ -165,49 +198,279 @@ location.getLocation().then((location)async {
     super.deactivate();
   }
 
-  void getDataOfOtherUser()async
-  {
-    var response = await http.get(Uri.parse('http://167.71.238.162/users/user?phone=${widget.phone}'));
-     var data = jsonDecode(response.body);
-      print(data);
+  void getDataOfOtherUser() async {
+    var response = await http.get(
+        Uri.parse('http://167.71.238.162/users/user?phone=${widget.phone}'));
+    var data = jsonDecode(response.body);
+    print(data);
+    if (!mounted) return;
     setState(() {
-      Othername=data[0]['name'];
-      image=data[0]['image'];
-
+      Othername = data[0]['name'];
+      image = data[0]['image'];
     });
-     print(Othername);
-     print(image);
-
+    print(Othername);
+    print(image);
   }
-  void controllerInitializer()async {
+
+  void controllerInitializer() async {
     googleMapController = await _mapController.future;
     print("Enterd ");
   }
-  var load=false;
+
+  var load = false;
+
   @override
   void initState() {
-    passengerCurrentLocation=HelperVariables.passengercurrentLocation;
     controllerInitializer();
+    // print('1 ${HelperVariables.pilotcurrentLocation}');
+    //
+    // setState(() {
+    passengerCurrentLocation = HelperVariables.passengercurrentLocation;
+    // });
+    print("2");
     initailizeWebsocket();
-    Future.delayed(Duration(seconds: 2),(){  getlocations();
+    print("3");
+    Future.delayed(Duration(seconds: 2), () {
+      getlocations();
     });
 
-    Future.delayed(Duration(seconds: 2),(){
+    Future.delayed(Duration(seconds: 2), () {
       getDataOfOtherUser();
     });
-      deleteFromIds(int.parse(HelperVariables.Phone));
+    deleteFromIds(int.parse(HelperVariables.Phone));
 
     // getDataOfOtherUser();
 
-
     // TODO: implement initState
     super.initState();
-
   }
-  var data=[30.8,78.3];
+
+  var data = [30.8, 78.3];
+  var dialogContexts;
+  int x = 0;
+
+  void validateInput(BuildContext context) async {
+    var _apiResponse = await OtpMethods().validateOtp(
+        otp: x,
+        pilot: widget.phone!,
+        passenger: int.parse(HelperVariables.Phone));
+    if (_apiResponse.body == "true") {
+      // Navigator.pop(this.context);
+      channel!.sink.add(jsonEncode({'to': widget.phone, 'location': 'end'}));
+      Future.delayed(Duration(seconds: 1), () {
+        Navigator.pushNamedAndRemoveUntil(
+            context, Options.id, (route) => false);
+      });
+    } else if (_apiResponse.body == "false") {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Wrong Otp"),
+        duration: Duration(milliseconds: 2000),
+      ));
+    }
+  }
+
+  Future<void> _EndDialog() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        dialogContexts = context;
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: AlertDialog(
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: <Widget>[
+                  Center(
+                    child: Column(
+                      children: [
+                        Text(
+                            'Your ride is completed! \nPlease enter the OTP shared by Pilot'),
+                        SizedBox(
+                          height: SizeConfig.safeBlockVertical * 9,
+                          width: SizeConfig.safeBlockHorizontal * 87,
+                          child: Pinput(
+                            onChanged: (val) {
+                              x = int.parse(val);
+                            },
+                            length: 4,
+                            // controller: otpController,
+                            defaultPinTheme: PinTheme(
+                              width: SizeConfig.safeBlockHorizontal * 15,
+                              height: SizeConfig.safeBlockVertical * 7,
+                              textStyle: TextStyle(
+                                  fontSize: 20,
+                                  fontFamily: 'NunitoSans',
+                                  color: Color.fromRGBO(30, 60, 87, 1),
+                                  fontWeight: FontWeight.w600),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.5),
+                                borderRadius: BorderRadius.circular(15),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color.fromRGBO(0, 0, 0, 0.059),
+                                    offset: Offset(0, 3),
+                                    blurRadius: 16,
+                                  )
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.only(
+                              bottom: SizeConfig.safeBlockVertical * 1),
+                          child: Center(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                validateInput(context);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.black,
+                                splashFactory: NoSplash.splashFactory,
+                              ),
+                              child: const Text(
+                                "End your ride!",
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontFamily: 'NunitoSans',
+                                    fontSize: 15),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showMyDialog() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        dialogContexts = context;
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: AlertDialog(
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: const <Widget>[
+                  Center(
+                    child: Text('Sorry,your pilot has canceled the ride!'),
+                  )
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _Cancel() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          elevation: 5,
+          content: SizedBox(
+              height: SizeConfig.safeBlockVertical * 8,
+              width: SizeConfig.safeBlockHorizontal * 45,
+              child: const Padding(
+                padding: EdgeInsets.all(0.0),
+                child: Text(
+                  'Are you sure you want to cancel the ride?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Nunito Sans',
+                      fontSize: 15),
+                ),
+              )),
+          actions: [
+            Padding(
+              padding: EdgeInsets.only(
+                bottom: SizeConfig.safeBlockVertical * 2,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Center(
+                      child: SizedBox(
+                        height: SizeConfig.safeBlockVertical * 6,
+                        width: SizeConfig.safeBlockHorizontal * 17,
+                        child: const Card(
+                          color: Colors.black,
+                          elevation: 5,
+                          child: Center(
+                            child: Text(
+                              'No',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'Nunito Sans',
+                                  color: Colors.white,
+                                  fontSize: 15),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      channel!.sink.add(jsonEncode(
+                          {'to': widget.phone, 'location': "cancel"}));
+                      Navigator.pushNamedAndRemoveUntil(
+                          context, Options.id, (route) => false);
+                    },
+                    child: Center(
+                      child: SizedBox(
+                        height: SizeConfig.safeBlockVertical * 6,
+                        width: SizeConfig.safeBlockHorizontal * 17,
+                        child: const Card(
+                          color: Colors.black,
+                          elevation: 5,
+                          child: Center(
+                            child: Text(
+                              'Yes',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'Nunito Sans',
+                                  color: Colors.white,
+                                  fontSize: 15),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            )
+          ],
+        );
+      },
+    );
+  }
+var checkOnce=0;
   @override
   Widget build(BuildContext context) {
-
     SizeConfig().init(context);
     return WillPopScope(
         child: SafeArea(
@@ -220,26 +483,45 @@ location.getLocation().then((location)async {
                 child: Stack(children: [
                   Container(
                     child: StreamBuilder(
-                stream: stream,
-                    builder: (BuildContext context,
-                        AsyncSnapshot<dynamic> snapshot) {
-                      print("This is a test using StreamBuilder!");
-                      if (snapshot.hasData) {
-                        var val;
+                        stream: stream,
+                        builder: (BuildContext context,
+                            AsyncSnapshot<dynamic> snapshot) {
+                          print("This is a test using StreamBuilder!");
 
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          setState(() {
-                            val =
-                                jsonDecode(snapshot.data);
-                            data[0] = val[0];
-                            data[1] = val[1];
+                          if (snapshot.hasData) {
+                            var val;
+                            print(snapshot.data.runtimeType);
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (!mounted) return;
+                              setState(() {
+                                val = jsonDecode(snapshot.data);
+                                if (val == 'started') {
+                                  rideStarted = true;
+                                  showOTP = false;
+                                  getPolyPoint(
+                                      passengerCurrentLocation!.latitude!,
+                                      passengerCurrentLocation!.longitude!,
+                                      PassengerScreen.des.latitude,
+                                      PassengerScreen.des.longitude);
+                                } else if (val == 'cancel' && checkOnce ==0) {
+                                  _showMyDialog();
+                                  Future.delayed(Duration(seconds: 2), () {
+                                    Navigator.pushNamedAndRemoveUntil(
+                                        context, Options.id, (route) => false);
+                                  });
 
-                          });
-                        });
-                      }
-                      print("the value of data is $data");
-                      return Text('');
-                    }),
+                                  channel!.sink.close();
+                                  checkOnce=1;
+                                } else {
+                                  data[0] = val[0];
+                                  data[1] = val[1];
+                                }
+                              });
+                            });
+                          }
+                          print("the value of data is $data");
+                          return Text('');
+                        }),
                   ),
                   SizedBox(
                     height: SizeConfig.safeBlockVertical * 100,
@@ -276,27 +558,26 @@ location.getLocation().then((location)async {
                                     polylineId: PolylineId('PassengerRoute'),
                                     color: Colors.lightBlueAccent,
                                     width: 5),
-                                const Polyline(
+                                Polyline(
                                     polylineId: PolylineId('PilotsRoute'),
                                     color: Colors.black,
+                                    points: polylineCoordinate,
                                     width: 5),
                               },
                               markers: {
                                 Marker(
                                     markerId: const MarkerId('Center'),
                                     icon: BitmapDescriptor.defaultMarker,
-                                    position:LatLng(data[0], data[1]),
+                                    position: LatLng(data[0], data[1]),
                                     draggable: true,
                                     zIndex: 25)
                               },
                               onMapCreated: (mapController) {
                                 setState(() {
                                   _mapController.complete(mapController);
-
                                 });
                               },
-                            )
-                        ),
+                            )),
                         Container(
                           height: SizeConfig.safeBlockVertical * 13,
                           width: SizeConfig.safeBlockHorizontal * 100,
@@ -309,8 +590,7 @@ location.getLocation().then((location)async {
                                 decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     image: DecorationImage(
-                                        image: NetworkImage(
-                                            '$image'),
+                                        image: NetworkImage('$image'),
                                         fit: BoxFit.fill)),
                               ),
                               Column(
@@ -321,7 +601,7 @@ location.getLocation().then((location)async {
                                     elevation: 5,
                                     borderRadius: BorderRadius.circular(15),
                                     color: Colors.white,
-                                    child:  Padding(
+                                    child: Padding(
                                       padding: EdgeInsets.all(10.0),
                                       child: Text(
                                         '$Othername',
@@ -335,9 +615,12 @@ location.getLocation().then((location)async {
                                   ),
                                 ],
                               ),
-                              SizedBox(width: 25,),
+                              SizedBox(
+                                width: 25,
+                              ),
                               GestureDetector(
                                 onTap: () async {
+                                  await _Cancel();
                                   await closeSocket(
                                       int.parse(HelperVariables.Phone));
                                 },
@@ -399,6 +682,15 @@ location.getLocation().then((location)async {
                       ),
                     ),
                   ),
+                  Visibility(
+                    visible: showOTP,
+                    child: Center(
+                      child: PassengerPopupDialog(
+                        passenger: int.parse(HelperVariables.Phone),
+                        pilot: widget.phone!,
+                      ),
+                    ),
+                  )
                 ]),
               ),
             ),

@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:veloce/passenger_popup.dart';
+import 'package:veloce/pilot_popup.dart';
+
 import 'list.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -23,22 +26,22 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter_android/google_maps_flutter_android.dart';
 import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart';
-
-
+var token;
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final GoogleMapsFlutterPlatform mapsImplementation = GoogleMapsFlutterPlatform.instance;
-  if(mapsImplementation is GoogleMapsFlutterAndroid) {
+  final GoogleMapsFlutterPlatform mapsImplementation =
+      GoogleMapsFlutterPlatform.instance;
+  if (mapsImplementation is GoogleMapsFlutterAndroid) {
     // mapsImplementation.useAndroidViewSurface = false;
     mapsImplementation.initializeWithRenderer(AndroidMapRenderer.latest);
   }
 
   await Firebase.initializeApp();
-  FirebaseMessaging.instance
+  token = await FirebaseMessaging.instance
       .getToken()
-      .then((value) => print('getToken: $value'));
+      .then((value) =>value);
   await SystemChrome.setPreferredOrientations(
     [DeviceOrientation.portraitUp],
   );
@@ -57,7 +60,7 @@ void main() async {
   //   }
   // });
   // FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  runApp( const MyApp());
+  runApp(const MyApp());
 }
 
 // Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -120,25 +123,27 @@ class MyApp extends StatelessWidget {
         //
 
         GetMaterialApp(
-          debugShowCheckedModeBanner: false,
-          navigatorKey: navigatorKey,
-          routes: {
-            SplashScreen.id: (_) => const SplashScreen(),
-            PhoneAuth.id: (_) => const PhoneAuth(),
-            OtpValidation.id: (_) => const OtpValidation(),
-            RegisterScreen.id: (_) => const RegisterScreen(),
-            ClickPicture.id: (_) => const ClickPicture(),
-            Options.id: (_) => const Options(),
-            PassengerScreen.id: (_) => const PassengerScreen(),
-            PilotScreen.id: (_) => const PilotScreen(),
-            Notify.id: (_) => const Notify(),
-            // NotificationPage.id: (_) => const NotificationPage(),
-            PassengerTrip.id: (_) => const PassengerTrip(),
-            PilotTrip.id: (_) => const PilotTrip(),
-            List.id: (_) => const List(),
-          },
-          initialRoute: SplashScreen.id,
-           // ),
-        );
+      debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
+      routes: {
+        SplashScreen.id: (_) =>  SplashScreen(token: token,),
+        PhoneAuth.id: (_) => const PhoneAuth(),
+        OtpValidation.id: (_) => OtpValidation(token: token,),
+        RegisterScreen.id: (_) => const RegisterScreen(),
+        ClickPicture.id: (_) =>  ClickPicture(token: token,),
+        Options.id: (_) => const Options(),
+        PassengerScreen.id: (_) => const PassengerScreen(),
+        PilotScreen.id: (_) => const PilotScreen(),
+        Notify.id: (_) => const Notify(),
+        // NotificationPage.id: (_) => const NotificationPage(),
+        PassengerTrip.id: (_) => const PassengerTrip(),
+        PilotTrip.id: (_) => const PilotTrip(),
+        // List.id: (_) => const List(),
+        // PilotPopupDialog.id: (_) => PilotPopupDialog(pilot: 0, passenger:0,),
+        // PassengerPopupDialog.id: (_) => PassengerPopupDialog(pilot: 0, passenger: 0,),
+      },
+      initialRoute: SplashScreen.id,
+      // ),
+    );
   }
 }

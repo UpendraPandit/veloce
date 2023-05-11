@@ -14,4 +14,5 @@ class HelperVariables{
   static var passengerName;
   static var destinationName;
   static var pilotName;
+  static var passengerDest;
 }

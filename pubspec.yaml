@@ -46,8 +46,8 @@ dependencies:
   flutter_google_places_hoc081098: ^1.0.0-nullsafety.1
   provider: ^6.0.5
   dart_geohash: ^2.0.2
-  firebase_core: ^2.4.1
-  firebase_auth: ^4.2.5
+  firebase_core: 2.8.0
+  firebase_auth: 4.3.0
   pinput: ^2.2.31
   email_validator: ^2.1.16
   mask_text_input_formatter: ^2.4.0
@@ -67,6 +67,8 @@ dependencies:
   socket_io_client: ^2.0.1
   web_socket_channel: ^2.3.0
   audioplayers: ^3.0.0
+#  connectivity_plus: ^2.0.2
+#  data_connection_checker: ^0.3.4
 
 
 

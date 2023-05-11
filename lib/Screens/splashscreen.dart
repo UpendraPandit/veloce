@@ -11,8 +11,9 @@ import '../sizeConfig.dart';
 
 class SplashScreen extends StatefulWidget {
   static var id = 'SplashScreen';
+  final String? token;
 
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({this.token});
 
   @override
   _SplashScreenState createState() => _SplashScreenState();
@@ -38,28 +39,32 @@ class _SplashScreenState extends State<SplashScreen> {
   String? finalPhone;
 
   Future<bool> getUserData(var phone) async {
-    print("entered");
-    var url = Uri.parse(
-        'http://167.71.238.162/users/user?phone=${int.parse(phone)}');
+    // print("entered");
+    var url =
+        Uri.parse('http://167.71.238.162/users/user?phone=${int.parse(phone)}');
 
     http.Response response = await http.get(url, headers: header);
     var data = jsonDecode(response.body);
-    print(data.toString());
-    if (data.length == 0) {
+    // print(data.toString());
+    if (data.length == 0 ){
       return false;
-    } else {
-      return true;
+    } else if (data[0]['token']!=widget.token){
+      return false;
     }
+    else
+      {
+        return true;
+      }
   }
 
   Future getValidation() async {
     final SharedPreferences sharedPreferences =
         await SharedPreferences.getInstance();
     var obtainedPhone = sharedPreferences.getString('phone');
-    print("entered");
+    // print("entered");
     if (obtainedPhone != null && await getUserData(obtainedPhone)) {
       setState(() {
-        print("Entered validation part");
+        // print("Entered validation part");
         finalPhone = obtainedPhone;
       });
       //  getUserData(obtainedPhone);
@@ -69,23 +74,20 @@ class _SplashScreenState extends State<SplashScreen> {
       HelperVariables.Phone = sharedPreferences.getString('phone')!;
       HelperVariables.img_url = sharedPreferences.getString('image')!;
     }
-    print("entered");
+    // print("entered");
   }
-
 
   @override
   Widget build(BuildContext context) {
     SizeConfig().init(context);
-    return  SafeArea(
-            child: Scaffold(
-          body: Center(
-            child: SizedBox(
-                height: SizeConfig.safeBlockVertical * 35,
-                width: SizeConfig.safeBlockHorizontal * 35,
-                child: Image.asset('assets/logo.gif')),
-          ),
-        )
-
-    );
+    return SafeArea(
+        child: Scaffold(
+      body: Center(
+        child: SizedBox(
+            height: SizeConfig.safeBlockVertical * 35,
+            width: SizeConfig.safeBlockHorizontal * 35,
+            child: Image.asset('assets/logo.gif')),
+      ),
+    ));
   }
 }

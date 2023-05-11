@@ -331,10 +331,10 @@ class _PhoneAuthState extends State<PhoneAuth> {
                             }
 
                             print(PhoneAuth.phone);
-                            bool val = await checkForDuplicateUser();
+                            // bool val = await checkForDuplicateUser();
                             print("Hello I have entered here!");
                             if (PhoneAuth.phone.length == 10) {
-                              if (!val) {
+
                                 setState(() {
                                   checkAbsorb = true;
                                   //  _showMyDialog();
@@ -359,12 +359,8 @@ class _PhoneAuthState extends State<PhoneAuth> {
                                   codeAutoRetrievalTimeout:
                                       (String verificationId) {},
                                 );
-                              } else {
-                                _UsedNumberError();
                               }
-                            } else {
-                              _NumberError();
-                            }
+
                           },
                           child: SizedBox(
                             height: SizeConfig.safeBlockVertical * 7,

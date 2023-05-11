@@ -24,7 +24,7 @@ bool destWidgetCheck = false;
 
 class PassengerScreen extends StatefulWidget {
   static var id = 'PassengerScreen';
-
+  static LatLng des = const LatLng(-30.2968691, -30.2968691);
   const PassengerScreen({Key? key}) : super(key: key);
 
   //API key: AIzaSyCScR-fqEvQ3t_tQtnX_nVo7Ir1e5AzhNQ
@@ -44,7 +44,7 @@ class _PassengerScreenState extends State<PassengerScreen> {
   late LatLng src =
   LatLng(currentLocation!.latitude!, currentLocation!.longitude!);
 
-  static LatLng des = const LatLng(-30.2968691, -30.2968691);
+
 
   // final TextEditingController _destinationController = TextEditingController();
   List<LatLng> polylineCoordinates = [];
@@ -61,17 +61,17 @@ class _PassengerScreenState extends State<PassengerScreen> {
   var isSourceChecked = false;
   var currentLoc;
   var pickupbottom = 80.0;
-  var pickupleft = 20.0;
-  var dropbottom = 18.0;
-  var dropleft = 20.0;
-  double distance = 0;
-  double sum = 0;
+  var pickupleft   = 20.0;
+  var dropbottom   = 18.0;
+  var dropleft     = 20.0;
+  double distance  = 0;
+  double sum       = 0;
   bool isDestandSrcSet = false;
   GoogleMapController? googleMapController;
   var LatLngIterator;
   bool isSentOnce = false;
   bool showPlaceSearch = true;
-
+//moved the des variable from dowanwards to upwards
   Timer? waitingTime;
 
   Future imageReturn() {
@@ -120,7 +120,7 @@ class _PassengerScreenState extends State<PassengerScreen> {
   }
 
   void waitForPilotResponse() {
-    waitingTime = Timer.periodic(const Duration(seconds: 30), (timer) {
+    waitingTime = Timer.periodic(const Duration(seconds:20), (timer) {
       if (!mounted) {
         return;
       }
@@ -128,7 +128,7 @@ class _PassengerScreenState extends State<PassengerScreen> {
       timer.cancel();
     });
   }
-
+ var waypoint;
   void getLocation() async {
     Location location = Location();
 
@@ -229,9 +229,8 @@ class _PassengerScreenState extends State<PassengerScreen> {
 
   void sendPassengerLocation() async {
     var currLocation = getGeoHashedValue(src);
-    var geohasher = GeoHasher();
-    var destination =
-    geohasher.encode(des.longitude, des.latitude, precision: 6);
+    // var geohasher = GeoHasher();
+    // var destination = geohasher.encode(des.longitude, des.latitude, precision: 6);
     Uri url;
     if (!isSentOnce) {
       url = Uri.parse('http://139.59.44.53/passengers/pushNewUser');
@@ -247,6 +246,8 @@ class _PassengerScreenState extends State<PassengerScreen> {
       "phone": int.parse(HelperVariables.Phone),
       "gender": HelperVariables.gender,
       "currLoc": currLocation,
+      //added dest
+      "dest":PassengerScreen.des,
       "destination": searchLocation,
     });
     var response = await (isSentOnce
@@ -265,10 +266,16 @@ class _PassengerScreenState extends State<PassengerScreen> {
 
   void searchPilot() async {
     var url = Uri.parse(
-        'http://139.59.44.53/passengers/getpilot?long=${des.longitude}&lat=${des
+        'http://139.59.44.53/passengers/getpilot?long=${PassengerScreen.des.longitude}&lat=${PassengerScreen.des
             .latitude}&currLong=${src.longitude}&currLat=${src
             .latitude}&phone=${HelperVariables.Phone}');
     var resp = await http.get(url);
+    var data=jsonDecode(resp.body);
+  //Added the setState here which was not there, the risk is it may ctash
+    setState(() {
+      waypoint=data['waypoint'];
+
+    });
     print('searchResponse ${resp.body}');
   }
 
@@ -372,7 +379,7 @@ class _PassengerScreenState extends State<PassengerScreen> {
                             ),
                             Marker(
                                 markerId: const MarkerId('destination'),
-                                position: des,
+                                position: PassengerScreen.des,
                                 icon: destinationIcon),
                           },
                           onMapCreated: (mapController) {
@@ -668,14 +675,14 @@ class _PassengerScreenState extends State<PassengerScreen> {
                                 final long = geometry.location.lng;
                                 var newLatLng = LatLng(lat, long);
                                 setState(() {
-                                  des = LatLng(lat, long);
+                                  PassengerScreen.des = LatLng(lat, long);
                                 });
                                 googleMapController?.animateCamera(
                                     CameraUpdate.newCameraPosition(
                                         CameraPosition(
                                             target: newLatLng, zoom: 17.5)));
                                 polylineCoordinates.clear();
-                                getPolyPoints(des.latitude, des.longitude);
+                                getPolyPoints(PassengerScreen.des.latitude, PassengerScreen.des.longitude);
                                 polyCheck = true;
                                 destWidgetCheck = true;
                                 setState(() {
@@ -775,7 +782,9 @@ class _PassengerScreenState extends State<PassengerScreen> {
                         builder: (BuildContext context,
                             AsyncSnapshot<dynamic> snapshot) {
                           if (snapshot.hasData) {
+
                             var response = jsonDecode(snapshot.data);
+
                             if (response['passenger'] ==
                                 int.parse(HelperVariables.Phone)) {
                               WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -788,6 +797,7 @@ class _PassengerScreenState extends State<PassengerScreen> {
                                           builder: (BuildContext context) {
                                             return PassengerTrip(
                                                 phone: response['pilot'],
+                                                waypoint:waypoint,
                                                 destiname:searchLocation
                                             );
                                           }), (route) => false);

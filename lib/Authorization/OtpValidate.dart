@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart'as http;
+import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -14,8 +14,9 @@ import '../sizeConfig.dart';
 
 class OtpValidation extends StatefulWidget {
   static var id = 'OtpValidation';
+  final String? token;
 
-  const OtpValidation({Key? key}) : super(key: key);
+  const OtpValidation({this.token});
 
   @override
   _OtpValidationState createState() => _OtpValidationState();
@@ -34,16 +35,16 @@ class _OtpValidationState extends State<OtpValidation> {
 
   final FirebaseAuth auth = FirebaseAuth.instance;
   var code = "";
-var dialogcontext;
-  Future<void> _showMyDialog() async {
+  var dialogcontext;
 
+  Future<void> _showMyDialog() async {
     return showDialog<void>(
       context: context,
       barrierDismissible: false, // user must tap button!
       builder: (BuildContext context) {
-        dialogcontext=context;
+        dialogcontext = context;
         return WillPopScope(
-          onWillPop: ()async=>false,
+          onWillPop: () async => false,
           child: AlertDialog(
             content: SingleChildScrollView(
               child: ListBody(
@@ -255,10 +256,14 @@ var dialogcontext;
                                     await auth.signInWithCredential(credential);
                                     HelperVariables.Phone = PhoneAuth.phone;
 
-                                    final SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-                                    sharedPreferences.setString('phone', HelperVariables.Phone);
+                                    final SharedPreferences sharedPreferences =
+                                        await SharedPreferences.getInstance();
+                                    sharedPreferences.setString(
+                                        'phone', HelperVariables.Phone);
 
-                                  await checkFirstTimeUser()?Get.to(()=> const RegisterScreen()):Get.to(()=> const Options());
+                                    await checkFirstTimeUser()
+                                        ? Get.to(() => const RegisterScreen())
+                                        : Get.to(()  =>const Options());
                                     print(HelperVariables.Phone);
                                     print("not transferred");
                                     // Navigator.pushNamed(
@@ -289,33 +294,41 @@ var dialogcontext;
       ),
     );
   }
-  Map<String,String> header={
-    'Content-Type':'application/json',
+
+  Map<String, String> header = {
+    'Content-Type': 'application/json',
   };
-Future<bool> checkFirstTimeUser()async{
-  print("entered");
-  var url =Uri.parse('http://167.71.238.162/users/user?phone=${int.parse(PhoneAuth.phone.toString())}');
-  print(PhoneAuth.phone);
-    http.Response response = await http.get(url,headers: header);
+
+  void changeToken() {
+    print("Chanfed toke");
+    var res = http.get(Uri.parse(
+        'http://167.71.238.162/users/updateToken?phone=${int.parse(PhoneAuth.phone.toString())}&token=${widget.token}'));
+    print("Chanfed toke");
+  }
+
+  Future<bool> checkFirstTimeUser() async {
+    print("entered");
+    var url = Uri.parse(
+        'http://167.71.238.162/users/user?phone=${int.parse(PhoneAuth.phone.toString())}');
+    print(PhoneAuth.phone);
+    http.Response response = await http.get(url, headers: header);
     var data = jsonDecode(response.body);
     print(response.body);
-    if(data.length==0)
-      {
-
+    print(data.length);
+    if (data.length == 0) {
       return true;
-      }
-    else
-      {
-             setState(() {
-
-               HelperVariables.Name=data[0]['name'];
-               HelperVariables.gender=data[0]['gender'];
-               HelperVariables.Email=data[0]['email'];
-               HelperVariables.img_url=data[0]['image'];
-
-             });
-        return false;
-      }
-
-}
+    }
+  else
+    {
+      changeToken();
+      setState(() {
+        HelperVariables.Name = data[0]['name'];
+        HelperVariables.gender = data[0]['gender'];
+        HelperVariables.Email = data[0]['email'];
+        HelperVariables.img_url = data[0]['image'];
+      });
+      print("Changed");
+      return false;
+    }
+  }
 }

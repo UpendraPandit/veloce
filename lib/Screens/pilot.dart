@@ -21,6 +21,8 @@ import 'package:flutter_google_places/flutter_google_places.dart';
 import 'package:dart_geohash/dart_geohash.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+var wayPointVal = const LatLng(0.0, 0.0);
+
 class PilotScreen extends StatefulWidget {
   static var id = 'PilotScreen';
 
@@ -39,7 +41,8 @@ class _PilotScreenState extends State<PilotScreen> {
     print("object");
 
     // TODO: implement dispose
-   googleMapController!.dispose();
+    googleMapController!.dispose();
+
     print('called');
     super.dispose();
   }
@@ -64,7 +67,7 @@ class _PilotScreenState extends State<PilotScreen> {
   var isDestinationSelected = false;
   var isStarted = true;
   var isSentOnce = false;
-  var wayPointVal = const LatLng(0.0, 0.0);
+
   var isTripNotStarted = true;
   double distance = 0;
   double sum = 0;
@@ -155,7 +158,7 @@ class _PilotScreenState extends State<PilotScreen> {
   }
 
   void getPolyPoints(double dlat, double dlong) async {
-    if(!mounted)return;
+    if (!mounted) return;
     print("tryin to enter the poly points sections");
     polylineCoordinates.clear();
     PolylinePoints polylinePoints = PolylinePoints();
@@ -271,7 +274,7 @@ class _PilotScreenState extends State<PilotScreen> {
     var data = jsonDecode(res.body);
   }
 
-  Future acceptUser(int passengerPhone, int pilotPhone) async {
+  Future acceptUser(int passengerPhone, int pilotPhone, var abc) async {
     var res = await http.get(Uri.parse(
         'http://139.59.44.53/accepted?pilot=$pilotPhone&passenger=$passengerPhone'));
     print("Is it because of this?!");
@@ -281,6 +284,7 @@ class _PilotScreenState extends State<PilotScreen> {
     }
     setState(() {
       HelperVariables.otherPhone = passengerPhone;
+      HelperVariables.passengerDest = abc;
     });
   }
 
@@ -316,6 +320,7 @@ class _PilotScreenState extends State<PilotScreen> {
         "type": "Point"
       },
       "polylineLocs": {"coordinates": param, "type": "LineString"},
+      "waypoint": wayPointVal,
       "destination": destination,
       "request": 0,
     });
@@ -326,7 +331,7 @@ class _PilotScreenState extends State<PilotScreen> {
     timer = Timer.periodic(
         const Duration(seconds: 4), (Timer t) => updatePilotLocation());
   }
-
+  var Address="Fetching Address...";
   @override
   void initState() {
     try {
@@ -361,6 +366,27 @@ class _PilotScreenState extends State<PilotScreen> {
 
   Set<Marker> marker = {};
 
+ Future<String> getAddressFromLatLng( double lat, double lng) async {
+    print("$lat,$lng");
+
+    if (lat != null && lng != null) {
+      print("Enasdasdasdterasded");
+      var response = await http.get(Uri.parse('https://maps.google.com/maps/api/geocode/json?key=AIzaSyBSrF5pLo5KLbOfEcifs1TuoTAm20qCM0M&language=en&latlng=$lat,$lng'),headers: {
+
+        "Content-Type": "application/json"
+      });
+      print('awe');
+      if (response.statusCode == 200) {
+        Map data = jsonDecode(response.body);
+        String _formattedAddress = data["results"][0]["formatted_address"];
+        print("response ==== $_formattedAddress");
+        return _formattedAddress;
+      } else
+        return null.toString();
+    } else
+      return null.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     SizeConfig().init(context);
@@ -388,10 +414,12 @@ class _PilotScreenState extends State<PilotScreen> {
                         height: SizeConfig.safeBlockVertical * 100,
                         width: SizeConfig.safeBlockHorizontal * 100,
                         child: GoogleMap(
-                          onCameraMove: (cameraPosition) {
-                            print(cameraPosition.toMap().toString());
-                            print(cameraPosition.bearing);
+                          onCameraMove: (cameraPosition)async {
                             markerDestination = LatLng(
+                                cameraPosition.target.latitude,
+                                cameraPosition.target.longitude);
+                         Address=   await getAddressFromLatLng(
+
                                 cameraPosition.target.latitude,
                                 cameraPosition.target.longitude);
                           },
@@ -582,15 +610,15 @@ class _PilotScreenState extends State<PilotScreen> {
                                 elevation: 5,
                                 child: InkWell(
                                   onTap: () {
-                                    if(!mounted)
-                                      {
-                                        return;
-                                      }
+                                    if (!mounted) {
+                                      return;
+                                    }
                                     setState(() {
                                       isStarted = false;
                                       wayPointMarkerLocked = true;
                                     });
-                                    print("Checking whether the problem exists here in pCoordinates or not!");
+                                    print(
+                                        "Checking whether the problem exists here in pCoordinates or not!");
                                     print(pCoordinates);
 
                                     coordinates.clear();
@@ -603,7 +631,8 @@ class _PilotScreenState extends State<PilotScreen> {
                                         pCoordinates[i].latitude
                                       ]);
                                     }
-                                    print("Checking whether the problem exists here or not!");
+                                    print(
+                                        "Checking whether the problem exists here or not!");
                                     print(coordinates);
                                     sendPilotLocation(coordinates);
                                     isTripNotStarted = false;
@@ -644,7 +673,7 @@ class _PilotScreenState extends State<PilotScreen> {
                               if (queue.isNotEmpty) {
                                 isNumberLocked =
                                     queue.contains(response['passengerPhone']);
-                                }
+                              }
                               if (!isNumberLocked &&
                                   (response['pilotPhone'] ==
                                       int.parse(HelperVariables.Phone))) {
@@ -724,12 +753,13 @@ class _PilotScreenState extends State<PilotScreen> {
                                             onTap: () async {
                                               await acceptUser(
                                                   response['passengerPhone'],
-                                                  response['pilotPhone']);
+                                                  response['pilotPhone'],
+                                                  response['passengerDest']);
                                               Navigator.pushAndRemoveUntil(
                                                   context,
                                                   MaterialPageRoute(builder:
                                                       (BuildContext context) {
-                                                 return PilotTrip(
+                                                return PilotTrip(
                                                     destname: response[
                                                         'passengerDestination']);
                                               }), (route) => false);
@@ -737,7 +767,6 @@ class _PilotScreenState extends State<PilotScreen> {
                                               timer!.cancel();
                                               deleteUser(int.parse(
                                                   HelperVariables.Phone));
-
                                             },
                                           ),
                                         ],
@@ -751,18 +780,40 @@ class _PilotScreenState extends State<PilotScreen> {
                         ),
                       ),
                       Center(
-                          child: Container(
-                        margin: EdgeInsets.only(
-                            left: SizeConfig.safeBlockHorizontal * 1.378,
-                            bottom: SizeConfig.safeBlockVertical * 8.25),
-                        color: Colors.transparent,
-                        height: SizeConfig.safeBlockVertical * 7.75,
-                        width: SizeConfig.safeBlockHorizontal * 10,
+                          child: Padding(
+                        padding: EdgeInsets.only(
+                            bottom: SizeConfig.blockSizeVertical * 11),
                         child: Image.asset(
                           'assets/pi.png',
-                          fit: BoxFit.fitHeight,
+                          scale: 2.85,
                         ),
                       )),
+                      Center(
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                              bottom: SizeConfig.blockSizeVertical * 30),
+                          child: Container(
+                            height: SizeConfig.blockSizeVertical * 5,
+                            width: SizeConfig.blockSizeHorizontal * 50,
+                            decoration: BoxDecoration(
+                                border:
+                                    Border.all(color: Colors.black, width: 1),
+                                color: Colors.white.withOpacity(0.85)),
+                            child: Material(
+                              child: Center(
+                                child: Text(
+                                  '$Address',
+                                  style: TextStyle(
+                                      fontSize: 15,
+                                      fontFamily: 'Nunito Sans',
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
                     ],
                   ),
                 ),

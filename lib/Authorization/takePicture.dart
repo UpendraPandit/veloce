@@ -13,8 +13,8 @@ import '../Screens/option.dart';
 
 class ClickPicture extends StatefulWidget {
   static var id = 'ClickPicture';
-
-  const ClickPicture({Key? key}) : super(key: key);
+   final String?token;
+ ClickPicture({this.token}) ;
 
   @override
   _ClickPictureState createState() => _ClickPictureState();
@@ -39,7 +39,7 @@ class _ClickPictureState extends State<ClickPicture> {
       "email": HelperVariables.Email,
       "gender": HelperVariables.gender,
       "image": 'https://nauftimage.sgp1.digitaloceanspaces.com/${HelperVariables.img_url}',
-      "activeStatus": 1
+      "token": widget.token
     });
     print(body);
     Map<String, String> headers = {'Content-Type': 'application/json'};
