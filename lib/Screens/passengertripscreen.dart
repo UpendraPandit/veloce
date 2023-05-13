@@ -258,8 +258,8 @@ class _PassengerTripState extends State<PassengerTrip> {
       // Navigator.pop(this.context);
       channel!.sink.add(jsonEncode({'to': widget.phone, 'location': 'end'}));
       Future.delayed(Duration(seconds: 1), () {
-        Navigator.pushNamedAndRemoveUntil(
-            context, Options.id, (route) => false);
+        Navigator.pushReplacementNamed(
+            context, Options.id);
       });
     } else if (_apiResponse.body == "false") {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -436,8 +436,8 @@ class _PassengerTripState extends State<PassengerTrip> {
                     onTap: () {
                       channel!.sink.add(jsonEncode(
                           {'to': widget.phone, 'location': "cancel"}));
-                      Navigator.pushNamedAndRemoveUntil(
-                          context, Options.id, (route) => false);
+                      Navigator.of(context)
+                          .pushReplacementNamed(Options.id);
                     },
                     child: Center(
                       child: SizedBox(
@@ -504,15 +504,16 @@ var checkOnce=0;
                                       PassengerScreen.des.latitude,
                                       PassengerScreen.des.longitude);
                                 } else if (val == 'cancel' && checkOnce ==0) {
-                                  _showMyDialog();
-                                  Future.delayed(Duration(seconds: 2), () {
-                                    Navigator.pushNamedAndRemoveUntil(
-                                        context, Options.id, (route) => false);
-                                  });
-
+                                    _showMyDialog();
+                                    Future.delayed(Duration(seconds: 2),()
+                                    {
+                                      Navigator.of(context)
+                                          .pushReplacementNamed(Options.id);
+                                    });
                                   channel!.sink.close();
                                   checkOnce=1;
-                                } else {
+                                }
+                                else {
                                   data[0] = val[0];
                                   data[1] = val[1];
                                 }

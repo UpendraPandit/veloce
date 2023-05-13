@@ -788,11 +788,8 @@ class _PassengerScreenState extends State<PassengerScreen> {
                             if (response['passenger'] ==
                                 int.parse(HelperVariables.Phone)) {
                               WidgetsBinding.instance.addPostFrameCallback((_) {
-
-
-
-                                  deleteUser(int.parse(HelperVariables.Phone));
-                                  Navigator.pushAndRemoveUntil(context,
+                                deleteUser(int.parse(HelperVariables.Phone));
+                                  Navigator.of(context).pushAndRemoveUntil(
                                       MaterialPageRoute(
                                           builder: (BuildContext context) {
                                             return PassengerTrip(
@@ -800,7 +797,7 @@ class _PassengerScreenState extends State<PassengerScreen> {
                                                 waypoint:waypoint,
                                                 destiname:searchLocation
                                             );
-                                          }), (route) => false);
+                                          }),(route)=>false);
 
                                 });
 

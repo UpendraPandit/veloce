@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:veloce/Screens/first.dart';
 import 'package:veloce/Screens/pilotripscreen.dart';
 import 'package:veloce/sizeConfig.dart';
@@ -22,6 +23,23 @@ import 'package:dart_geohash/dart_geohash.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 var wayPointVal = const LatLng(0.0, 0.0);
+
+Future<String> getAddressFromLatLng(double lat, double lng) async {
+  if (lat != null && lng != null) {
+    var response = await http.get(
+        Uri.parse(
+            'https://maps.google.com/maps/api/geocode/json?key=AIzaSyBSrF5pLo5KLbOfEcifs1TuoTAm20qCM0M&language=en&latlng=$lat,$lng'),
+        headers: {"Content-Type": "application/json"});
+
+    if (response.statusCode == 200) {
+      Map data = jsonDecode(response.body);
+      String _formattedAddress = data["results"][0]["formatted_address"];
+      return _formattedAddress;
+    } else
+      return null.toString();
+  } else
+    return null.toString();
+}
 
 class PilotScreen extends StatefulWidget {
   static var id = 'PilotScreen';
@@ -331,7 +349,9 @@ class _PilotScreenState extends State<PilotScreen> {
     timer = Timer.periodic(
         const Duration(seconds: 4), (Timer t) => updatePilotLocation());
   }
-  var Address="Fetching Address...";
+
+  var Address = "Fetching Address...";
+
   @override
   void initState() {
     try {
@@ -366,15 +386,15 @@ class _PilotScreenState extends State<PilotScreen> {
 
   Set<Marker> marker = {};
 
- Future<String> getAddressFromLatLng( double lat, double lng) async {
+  Future<String> getAddressFromLatLng(double lat, double lng) async {
     print("$lat,$lng");
 
     if (lat != null && lng != null) {
       print("Enasdasdasdterasded");
-      var response = await http.get(Uri.parse('https://maps.google.com/maps/api/geocode/json?key=AIzaSyBSrF5pLo5KLbOfEcifs1TuoTAm20qCM0M&language=en&latlng=$lat,$lng'),headers: {
-
-        "Content-Type": "application/json"
-      });
+      var response = await http.get(
+          Uri.parse(
+              'https://maps.google.com/maps/api/geocode/json?key=AIzaSyBSrF5pLo5KLbOfEcifs1TuoTAm20qCM0M&language=en&latlng=$lat,$lng'),
+          headers: {"Content-Type": "application/json"});
       print('awe');
       if (response.statusCode == 200) {
         Map data = jsonDecode(response.body);
@@ -391,435 +411,462 @@ class _PilotScreenState extends State<PilotScreen> {
   Widget build(BuildContext context) {
     SizeConfig().init(context);
     print(FirstScreen.latitude);
-    return WillPopScope(
-      onWillPop: () async {
-        deleteUser(int.parse(HelperVariables.Phone));
-        return true;
-      },
-      child: SafeArea(
-          child: Scaffold(
-        body: currentLocation == null
-            ? const Center(
-                child: CircularProgressIndicator(
-                color: Colors.black,
-                strokeWidth: 3.5,
-              ))
-            : SingleChildScrollView(
-                child: SizedBox(
-                  height: SizeConfig.safeBlockVertical * 100,
-                  width: SizeConfig.safeBlockHorizontal * 100,
-                  child: Stack(
-                    children: [
-                      SizedBox(
-                        height: SizeConfig.safeBlockVertical * 100,
-                        width: SizeConfig.safeBlockHorizontal * 100,
-                        child: GoogleMap(
-                          onCameraMove: (cameraPosition)async {
-                            markerDestination = LatLng(
-                                cameraPosition.target.latitude,
-                                cameraPosition.target.longitude);
-                         Address=   await getAddressFromLatLng(
-
-                                cameraPosition.target.latitude,
-                                cameraPosition.target.longitude);
-                          },
-                          mapType: MapType.normal,
-                          zoomControlsEnabled: false,
-                          onTap: wayPointMarkerLocked
-                              ? (LatLng val) {}
-                              : (LatLng val) {
+    return ChangeNotifierProvider<MyModel>(
+        create: (BuildContext context) => GetModel(),
+        child: WillPopScope(
+          onWillPop: () async {
+            deleteUser(int.parse(HelperVariables.Phone));
+            return true;
+          },
+          child: SafeArea(
+              child: Scaffold(
+            body: currentLocation == null
+                ? const Center(
+                    child: CircularProgressIndicator(
+                    color: Colors.black,
+                    strokeWidth: 3.5,
+                  ))
+                : SingleChildScrollView(
+                    child: SizedBox(
+                      height: SizeConfig.safeBlockVertical * 100,
+                      width: SizeConfig.safeBlockHorizontal * 100,
+                      child: Stack(
+                        children: [
+                          SizedBox(
+                            height: SizeConfig.safeBlockVertical * 100,
+                            width: SizeConfig.safeBlockHorizontal * 100,
+                            child: Consumer<MyModel>(
+                                builder: (context, MyModel, child) {
+                              return GoogleMap(
+                                // onCameraMove: (cameraPosition) async {
+                                //   markerDestination = LatLng(
+                                //       cameraPosition.target.latitude,
+                                //       cameraPosition.target.longitude);
+                                //  MyModel.doS(cameraPosition.target.latitude,
+                                //       cameraPosition.target.longitude);
+                                //  // getPolyPoints(cameraPosition.target.latitude, cameraPosition.target.longitude);
+                                //
+                                // },
+                                mapType: MapType.normal,
+                                zoomControlsEnabled: false,
+                                onTap: wayPointMarkerLocked
+                                    ? (LatLng val) {}
+                                    : (LatLng val) {
+                                        setState(() {
+                                          if (destWidgetCheck) {
+                                            wayPointVal = val;
+                                            isWayPointSet = true;
+                                            polylineCoordinates.clear();
+                                            getPolyPoints(
+                                                des.latitude, des.longitude);
+                                            print(wayPointVal);
+                                          }
+                                        });
+                                      },
+                                myLocationButtonEnabled: true,
+                                myLocationEnabled: true,
+                                buildingsEnabled: false,
+                                tiltGesturesEnabled: true,
+                                initialCameraPosition: CameraPosition(
+                                  target: LatLng(currentLocation!.latitude!,
+                                      currentLocation!.longitude!),
+                                  zoom: 17.5,
+                                ),
+                                polylines: {
+                                  Polyline(
+                                      polylineId: const PolylineId("route"),
+                                      points: polylineCoordinates,
+                                      color: Colors.black,
+                                      width: 5,
+                                      geodesic: false),
+                                },
+                                markers: {
+                                  // Marker(
+                                  //   markerId: const MarkerId('current Location'),
+                                  //   position: src,
+                                  //   consumeTapEvents: true,
+                                  //   // position: LatLng(currentLocation!.latitude!,
+                                  //   //     currentLocation!.longitude!),
+                                  //   icon: srcIcon,
+                                  // ),
+                                  Marker(
+                                    markerId: const MarkerId('wayPoint'),
+                                    position: wayPointVal,
+                                    visible: isWayPointSet,
+                                    icon: BitmapDescriptor.defaultMarkerWithHue(
+                                        200),
+                                  ),
+                                  // Marker(
+                                  //   markerId: const MarkerId('destination'),
+                                  //   position: des,
+                                  //   icon: destinationIcon,
+                                  // ),
+                                },
+                                onMapCreated: (mapController) {
                                   setState(() {
-                                    if (destWidgetCheck) {
-                                      wayPointVal = val;
-                                      isWayPointSet = true;
+                                    _mapController.complete(mapController);
+                                  });
+                                },
+                              );
+                            }),
+                          ),
+                          Visibility(
+                            visible: isStarted,
+                            child: Positioned(
+                              bottom: SizeConfig.safeBlockVertical * 2,
+                              left: SizeConfig.safeBlockHorizontal * 15,
+                              child: InkWell(
+                                  onTap: () async {
+                                    setState(() {
+                                      isWayPointSet = false;
+                                    });
+                                    var place = await PlacesAutocomplete.show(
+                                        context: context,
+                                        apiKey: map_api_key,
+                                        overlayBorderRadius:
+                                            BorderRadius.circular(25),
+                                        logo: Container(
+                                          width:
+                                              SizeConfig.safeBlockHorizontal *
+                                                  100,
+                                          height:
+                                              SizeConfig.safeBlockVertical * 7,
+                                          decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(25)),
+                                        ),
+                                        mode: Mode.overlay,
+                                        types: [],
+                                        strictbounds: false,
+                                        radius: 50,
+                                        components: [
+                                          gmws.Component(
+                                            gmws.Component.country,
+                                            'in',
+                                          ),
+                                        ],
+                                        onError: (err) {
+                                          print(err);
+                                        });
+                                    if (place != null) {
+                                      setState(() {
+                                        searchLocation =
+                                            place.description.toString();
+                                      });
+                                      final plist = gmws.GoogleMapsPlaces(
+                                        apiKey: map_api_key,
+                                        apiHeaders:
+                                            await const GoogleApiHeaders()
+                                                .getHeaders(),
+                                      );
+                                      String placeId = place.placeId ?? "0";
+                                      print(placeId);
+
+                                      final detail = await plist
+                                          .getDetailsByPlaceId(placeId);
+                                      final geometry = detail.result.geometry!;
+                                      final lat = geometry.location.lat;
+                                      final long = geometry.location.lng;
+                                      var newLatLng = LatLng(lat, long);
+                                      setState(() {
+                                        des = LatLng(lat, long);
+                                        isDestinationSelected = true;
+                                      });
+
+                                      googleMapController?.animateCamera(
+                                          CameraUpdate.newCameraPosition(
+                                              CameraPosition(
+                                                  target: newLatLng,
+                                                  zoom: 17.5)));
+                                      await _WayPoint();
                                       polylineCoordinates.clear();
                                       getPolyPoints(
                                           des.latitude, des.longitude);
-                                      print(wayPointVal);
+                                      // var polyCheck = true;
+                                      destWidgetCheck = true;
                                     }
-                                  });
-                                },
-                          myLocationButtonEnabled: true,
-                          myLocationEnabled: true,
-                          buildingsEnabled: false,
-                          tiltGesturesEnabled: true,
-                          initialCameraPosition: CameraPosition(
-                            target: LatLng(currentLocation!.latitude!,
-                                currentLocation!.longitude!),
-                            zoom: 17.5,
-                          ),
-                          polylines: {
-                            Polyline(
-                                polylineId: const PolylineId("route"),
-                                points: polylineCoordinates,
-                                color: Colors.black,
-                                width: 5,
-                                geodesic: false),
-                          },
-                          markers: {
-                            // Marker(
-                            //   markerId: const MarkerId('current Location'),
-                            //   position: src,
-                            //   consumeTapEvents: true,
-                            //   // position: LatLng(currentLocation!.latitude!,
-                            //   //     currentLocation!.longitude!),
-                            //   icon: srcIcon,
-                            // ),
-                            Marker(
-                              markerId: const MarkerId('wayPoint'),
-                              position: wayPointVal,
-                              visible: isWayPointSet,
-                              icon: BitmapDescriptor.defaultMarkerWithHue(200),
-                            ),
-                            // Marker(
-                            //   markerId: const MarkerId('destination'),
-                            //   position: des,
-                            //   icon: destinationIcon,
-                            // ),
-                          },
-                          onMapCreated: (mapController) {
-                            setState(() {
-                              _mapController.complete(mapController);
-                            });
-                          },
-                        ),
-                      ),
-                      Visibility(
-                        visible: isStarted,
-                        child: Positioned(
-                          bottom: SizeConfig.safeBlockVertical * 2,
-                          left: SizeConfig.safeBlockHorizontal * 15,
-                          child: InkWell(
-                              onTap: () async {
-                                setState(() {
-                                  isWayPointSet = false;
-                                });
-                                var place = await PlacesAutocomplete.show(
-                                    context: context,
-                                    apiKey: map_api_key,
-                                    overlayBorderRadius:
-                                        BorderRadius.circular(25),
-                                    logo: Container(
-                                      width:
-                                          SizeConfig.safeBlockHorizontal * 100,
-                                      height: SizeConfig.safeBlockVertical * 7,
-                                      decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(25)),
-                                    ),
-                                    mode: Mode.overlay,
-                                    types: [],
-                                    strictbounds: false,
-                                    radius: 50,
-                                    components: [
-                                      gmws.Component(
-                                        gmws.Component.country,
-                                        'in',
-                                      ),
-                                    ],
-                                    onError: (err) {
-                                      print(err);
-                                    });
-                                if (place != null) {
-                                  setState(() {
-                                    searchLocation =
-                                        place.description.toString();
-                                  });
-                                  final plist = gmws.GoogleMapsPlaces(
-                                    apiKey: map_api_key,
-                                    apiHeaders: await const GoogleApiHeaders()
-                                        .getHeaders(),
-                                  );
-                                  String placeId = place.placeId ?? "0";
-                                  print(placeId);
-
-                                  final detail =
-                                      await plist.getDetailsByPlaceId(placeId);
-                                  final geometry = detail.result.geometry!;
-                                  final lat = geometry.location.lat;
-                                  final long = geometry.location.lng;
-                                  var newLatLng = LatLng(lat, long);
-                                  setState(() {
-                                    des = LatLng(lat, long);
-                                    isDestinationSelected = true;
-                                  });
-
-                                  googleMapController?.animateCamera(
-                                      CameraUpdate.newCameraPosition(
-                                          CameraPosition(
-                                              target: newLatLng, zoom: 17.5)));
-                                  await _WayPoint();
-                                  polylineCoordinates.clear();
-                                  getPolyPoints(des.latitude, des.longitude);
-                                  // var polyCheck = true;
-                                  destWidgetCheck = true;
-                                }
-                              },
-                              child: destWidgetCheck
-                                  ? Center(
-                                      child: SizedBox(
+                                  },
+                                  child: destWidgetCheck
+                                      ? Center(
+                                          child: SizedBox(
+                                              height:
+                                                  SizeConfig.safeBlockVertical *
+                                                      7,
+                                              width: SizeConfig
+                                                      .safeBlockHorizontal *
+                                                  14,
+                                              child: Card(
+                                                color:
+                                                    Colors.black.withOpacity(1),
+                                                shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            25)),
+                                                elevation: 5,
+                                                child: const Center(
+                                                  child: Icon(
+                                                    Icons
+                                                        .edit_location_outlined,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              )),
+                                        )
+                                      : SizedBox(
                                           height:
-                                              SizeConfig.safeBlockVertical * 7,
+                                              SizeConfig.safeBlockVertical * 6,
                                           width:
                                               SizeConfig.safeBlockHorizontal *
-                                                  14,
+                                                  65,
                                           child: Card(
-                                            color: Colors.black.withOpacity(1),
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(25)),
-                                            elevation: 5,
-                                            child: const Center(
-                                              child: Icon(
-                                                Icons.edit_location_outlined,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          )),
-                                    )
-                                  : SizedBox(
-                                      height: SizeConfig.safeBlockVertical * 6,
-                                      width:
-                                          SizeConfig.safeBlockHorizontal * 65,
-                                      child: Card(
-                                          color: Colors.black.withOpacity(1),
-                                          elevation: 5,
-                                          child: const Center(
-                                            child: Text(
-                                              'Enter your destination',
-                                              style: TextStyle(
-                                                fontFamily: 'Nunito Sans',
-                                                fontWeight: FontWeight.w900,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          )),
-                                    )),
-                        ),
-                      ),
-                      Visibility(
-                        visible: isDestinationSelected && isTripNotStarted,
-                        child: Positioned(
-                          bottom: SizeConfig.safeBlockVertical * 2,
-                          left: SizeConfig.safeBlockHorizontal * 30,
-                          child: SizedBox(
-                            height: SizeConfig.safeBlockVertical * 6,
-                            width: SizeConfig.safeBlockHorizontal * 45,
-                            child: Card(
-                                color: Colors.black.withOpacity(1),
-                                elevation: 5,
-                                child: InkWell(
-                                  onTap: () {
-                                    if (!mounted) {
-                                      return;
-                                    }
-                                    setState(() {
-                                      isStarted = false;
-                                      wayPointMarkerLocked = true;
-                                    });
-                                    print(
-                                        "Checking whether the problem exists here in pCoordinates or not!");
-                                    print(pCoordinates);
-
-                                    coordinates.clear();
-
-                                    for (int i = 0;
-                                        i < pCoordinates.length;
-                                        i++) {
-                                      coordinates.add([
-                                        pCoordinates[i].longitude,
-                                        pCoordinates[i].latitude
-                                      ]);
-                                    }
-                                    print(
-                                        "Checking whether the problem exists here or not!");
-                                    print(coordinates);
-                                    sendPilotLocation(coordinates);
-                                    isTripNotStarted = false;
-                                    isSentOnce = true;
-                                  },
-                                  child: const Material(
-                                    color: Colors.transparent,
-                                    child: Center(
-                                      child: Text(
-                                        'Start your ride!',
-                                        style: TextStyle(
-                                          fontFamily: 'Nunito Sans',
-                                          fontWeight: FontWeight.w900,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                )),
+                                              color:
+                                                  Colors.black.withOpacity(1),
+                                              elevation: 5,
+                                              child: const Center(
+                                                child: Text(
+                                                  'Enter your destination',
+                                                  style: TextStyle(
+                                                    fontFamily: 'Nunito Sans',
+                                                    fontWeight: FontWeight.w900,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              )),
+                                        )),
+                            ),
                           ),
-                        ),
-                      ),
-                      Positioned(
-                        left: SizeConfig.safeBlockHorizontal * 3,
-                        right: SizeConfig.safeBlockHorizontal * 3,
-                        bottom: SizeConfig.safeBlockVertical * 7.5,
-                        child: StreamBuilder(
-                          stream: stream,
-                          builder: (BuildContext context,
-                              AsyncSnapshot<dynamic> snapshot) {
-                            print("entered");
-                            var response;
-                            print(response);
-                            if (snapshot.hasData) {
-                              var isNumberLocked =
-                                  false; //bool to check whether the pilot has already blocked the passenger.
-                              response = jsonDecode(snapshot.data);
-                              if (queue.isNotEmpty) {
-                                isNumberLocked =
-                                    queue.contains(response['passengerPhone']);
-                              }
-                              if (!isNumberLocked &&
-                                  (response['pilotPhone'] ==
-                                      int.parse(HelperVariables.Phone))) {
-                                showRequest = true;
-                                playMusic();
-                              }
-                            }
-                            return Visibility(
-                              visible: showRequest,
-                              child: Material(
-                                type: MaterialType.button,
-                                borderRadius: BorderRadius.circular(25),
-                                elevation: 5,
-                                color: Colors.white,
-                                child: Column(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.all(15.0),
-                                      child: RichText(
-                                        text: TextSpan(
-                                          style: DefaultTextStyle.of(context)
-                                              .style,
-                                          children: <TextSpan>[
-                                            TextSpan(
-                                              text: showRequest
-                                                  ? '${response['passengerName']} '
-                                                  : '',
-                                              style: const TextStyle(
-                                                  fontSize: 17.5,
-                                                  fontFamily: 'Nunito Sans',
-                                                  fontWeight: FontWeight.w900),
+                          Visibility(
+                            visible: isDestinationSelected && isTripNotStarted,
+                            child: Positioned(
+                              bottom: SizeConfig.safeBlockVertical * 2,
+                              left: SizeConfig.safeBlockHorizontal * 30,
+                              child: SizedBox(
+                                height: SizeConfig.safeBlockVertical * 6,
+                                width: SizeConfig.safeBlockHorizontal * 45,
+                                child: Card(
+                                    color: Colors.black.withOpacity(1),
+                                    elevation: 5,
+                                    child: InkWell(
+                                      onTap: () {
+                                        if (!mounted) {
+                                          return;
+                                        }
+                                        setState(() {
+                                          isStarted = false;
+                                          wayPointMarkerLocked = true;
+                                        });
+                                        print(
+                                            "Checking whether the problem exists here in pCoordinates or not!");
+                                        print(pCoordinates);
+
+                                        coordinates.clear();
+
+                                        for (int i = 0;
+                                            i < pCoordinates.length;
+                                            i++) {
+                                          coordinates.add([
+                                            pCoordinates[i].longitude,
+                                            pCoordinates[i].latitude
+                                          ]);
+                                        }
+                                        print(
+                                            "Checking whether the problem exists here or not!");
+                                        print(coordinates);
+                                        sendPilotLocation(coordinates);
+                                        isTripNotStarted = false;
+                                        isSentOnce = true;
+                                      },
+                                      child: const Material(
+                                        color: Colors.transparent,
+                                        child: Center(
+                                          child: Text(
+                                            'Start your ride!',
+                                            style: TextStyle(
+                                              fontFamily: 'Nunito Sans',
+                                              fontWeight: FontWeight.w900,
+                                              color: Colors.white,
                                             ),
-                                            const TextSpan(
-                                                text: 'wants a ride to ',
-                                                style: TextStyle(
-                                                    fontSize: 15,
-                                                    fontFamily: 'Nunito Sans',
-                                                    fontWeight:
-                                                        FontWeight.w600)),
-                                            TextSpan(
-                                                text: showRequest
-                                                    ? '${response['passengerDestination']}'
-                                                        .toString()
-                                                    : '',
-                                                style: const TextStyle(
-                                                    fontSize: 15.85,
-                                                    fontFamily: 'Nunito Sans',
-                                                    fontWeight:
-                                                        FontWeight.w900)),
-                                          ],
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(10.50),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceEvenly,
-                                        children: [
-                                          RequestResponseWidget(
-                                            color: Colors.red,
-                                            response: 'Reject',
-                                            onTap: () {
-                                              stopMusic();
-                                              queue.addFirst(
-                                                  response['passengerPhone']);
-                                              setState(() {
-                                                showRequest = false;
-                                              });
-                                            },
-                                          ),
-                                          RequestResponseWidget(
-                                            color: Colors.green,
-                                            response: 'Accept',
-                                            onTap: () async {
-                                              await acceptUser(
-                                                  response['passengerPhone'],
-                                                  response['pilotPhone'],
-                                                  response['passengerDest']);
-                                              Navigator.pushAndRemoveUntil(
-                                                  context,
-                                                  MaterialPageRoute(builder:
-                                                      (BuildContext context) {
-                                                return PilotTrip(
-                                                    destname: response[
-                                                        'passengerDestination']);
-                                              }), (route) => false);
-                                              player.stop();
-                                              timer!.cancel();
-                                              deleteUser(int.parse(
-                                                  HelperVariables.Phone));
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      Center(
-                          child: Padding(
-                        padding: EdgeInsets.only(
-                            bottom: SizeConfig.blockSizeVertical * 11),
-                        child: Image.asset(
-                          'assets/pi.png',
-                          scale: 2.85,
-                        ),
-                      )),
-                      Center(
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                              bottom: SizeConfig.blockSizeVertical * 30),
-                          child: Container(
-                            height: SizeConfig.blockSizeVertical * 5,
-                            width: SizeConfig.blockSizeHorizontal * 50,
-                            decoration: BoxDecoration(
-                                border:
-                                    Border.all(color: Colors.black, width: 1),
-                                color: Colors.white.withOpacity(0.85)),
-                            child: Material(
-                              child: Center(
-                                child: Text(
-                                  '$Address',
-                                  style: TextStyle(
-                                      fontSize: 15,
-                                      fontFamily: 'Nunito Sans',
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.black),
-                                ),
+                                    )),
                               ),
                             ),
                           ),
-                        ),
-                      )
-                    ],
+                          Positioned(
+                            left: SizeConfig.safeBlockHorizontal * 3,
+                            right: SizeConfig.safeBlockHorizontal * 3,
+                            bottom: SizeConfig.safeBlockVertical * 7.5,
+                            child: StreamBuilder(
+                              stream: stream,
+                              builder: (BuildContext context,
+                                  AsyncSnapshot<dynamic> snapshot) {
+                                print("entered");
+                                var response;
+                                print(response);
+                                if (snapshot.hasData) {
+                                  var isNumberLocked =
+                                      false; //bool to check whether the pilot has already blocked the passenger.
+                                  response = jsonDecode(snapshot.data);
+                                  if (queue.isNotEmpty) {
+                                    isNumberLocked = queue
+                                        .contains(response['passengerPhone']);
+                                  }
+                                  if (!isNumberLocked &&
+                                      (response['pilotPhone'] ==
+                                          int.parse(HelperVariables.Phone))) {
+                                    showRequest = true;
+                                    playMusic();
+                                  }
+                                }
+                                return Visibility(
+                                  visible: showRequest,
+                                  child: Material(
+                                    type: MaterialType.button,
+                                    borderRadius: BorderRadius.circular(25),
+                                    elevation: 5,
+                                    color: Colors.white,
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceAround,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(15.0),
+                                          child: RichText(
+                                            text: TextSpan(
+                                              style:
+                                                  DefaultTextStyle.of(context)
+                                                      .style,
+                                              children: <TextSpan>[
+                                                TextSpan(
+                                                  text: showRequest
+                                                      ? '${response['passengerName']} '
+                                                      : '',
+                                                  style: const TextStyle(
+                                                      fontSize: 17.5,
+                                                      fontFamily: 'Nunito Sans',
+                                                      fontWeight:
+                                                          FontWeight.w900),
+                                                ),
+                                                const TextSpan(
+                                                    text: 'wants a ride to ',
+                                                    style: TextStyle(
+                                                        fontSize: 15,
+                                                        fontFamily:
+                                                            'Nunito Sans',
+                                                        fontWeight:
+                                                            FontWeight.w600)),
+                                                TextSpan(
+                                                    text: showRequest
+                                                        ? '${response['passengerDestination']}'
+                                                            .toString()
+                                                        : '',
+                                                    style: const TextStyle(
+                                                        fontSize: 15.85,
+                                                        fontFamily:
+                                                            'Nunito Sans',
+                                                        fontWeight:
+                                                            FontWeight.w900)),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(10.50),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceEvenly,
+                                            children: [
+                                              RequestResponseWidget(
+                                                color: Colors.red,
+                                                response: 'Reject',
+                                                onTap: () {
+                                                  stopMusic();
+                                                  queue.addFirst(response[
+                                                      'passengerPhone']);
+                                                  setState(() {
+                                                    showRequest = false;
+                                                  });
+                                                },
+                                              ),
+                                              RequestResponseWidget(
+                                                color: Colors.green,
+                                                response: 'Accept',
+                                                onTap: () async {
+                                                  await acceptUser(
+                                                      response['passengerPhone'],
+                                                      response['pilotPhone'],
+                                                      response['passengerDest']);
+                                                  Navigator.of(context).pushReplacement(
+                                                    MaterialPageRoute(builder:
+                                                        (BuildContext context) {
+                                                      return PilotTrip(
+                                                          destname: response[
+                                                              'passengerDestination']);
+                                                    }),
+                                                  );
+
+                                                  player.stop();
+                                                  timer!.cancel();
+                                                  deleteUser(int.parse(
+                                                      HelperVariables.Phone));
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          // Center(
+                          //     child: Padding(
+                          //   padding: EdgeInsets.only(
+                          //       bottom: SizeConfig.blockSizeVertical * 11),
+                          //   child: Image.asset(
+                          //     'assets/pi.png',
+                          //     scale: 2.85,
+                          //   ),
+                          // )),
+                          // Center(
+                          //   child: Padding(
+                          //     padding: EdgeInsets.only(
+                          //         bottom: SizeConfig.blockSizeVertical * 30),
+                          //     child: Container(
+                          //       height: SizeConfig.blockSizeVertical * 5,
+                          //       width: SizeConfig.blockSizeHorizontal * 50,
+                          //       decoration: BoxDecoration(
+                          //           border: Border.all(
+                          //               color: Colors.black, width: 1),
+                          //           color: Colors.white.withOpacity(0.85)),
+                          //       child: Material(
+                          //         child: Center(
+                          //           child: Consumer<MyModel>(
+                          //               // ignore: avoid_types_as_parameter_names, non_constant_identifier_names
+                          //               builder: (context, MyModel, child) {
+                          //             return Text(
+                          //               MyModel.username,
+                          //               style: TextStyle(
+                          //                   fontSize: 15,
+                          //                   fontFamily: 'Nunito Sans',
+                          //                   fontWeight: FontWeight.w500,
+                          //                   color: Colors.black),
+                          //             );
+                          //           }),
+                          //         ),
+                          //       ),
+                          //     ),
+                          //   ),
+                          // )
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
-      )),
-    );
+          )),
+        ));
   }
 
   Future<void> _WayPoint() async {
@@ -1007,5 +1054,94 @@ class RequestResponseWidget extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// class MyApp extends StatelessWidget {
+//   const MyApp({super.key});
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       debugShowCheckedModeBanner: false,
+//       routes: {
+//         ProviderTest.id: (_) => const ProviderTest(),
+//       },
+//       initialRoute: ProviderTest.id,
+//     );
+//   }
+// }
+//
+// class ProviderTest extends StatefulWidget {
+//   static var id = 'ProviderTest';
+//
+//   const ProviderTest({Key? key}) : super(key: key);
+//
+//   @override
+//   // ignore: library_private_types_in_public_api
+//   _ProviderTestState createState() => _ProviderTestState();
+// }
+//
+// class _ProviderTestState extends State<ProviderTest> {
+//   @override
+//   Widget build(BuildContext context) {
+//     return ChangeNotifierProvider<MyModel>(
+//       create: (BuildContext context) => GetModel(),
+//
+//       child: Scaffold(
+//         appBar: AppBar(
+//           backgroundColor: Colors.lightBlue,
+//           title: const Text('Provider Test'),
+//           centerTitle: true,
+//         ),
+//         body: Column(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           crossAxisAlignment: CrossAxisAlignment.center,
+//           children: [
+//             Container(
+//               color: Colors.lightBlue,
+//               height: 200,
+//               width: 300,
+//               child: Consumer<MyModel>(
+//                 // ignore: avoid_types_as_parameter_names, non_constant_identifier_names
+//                 builder: (context, MyModel, child) {
+//                   return Center(
+//                     child: Text(
+//                       MyModel.username,
+//                       style: const TextStyle(color: Colors.black, fontSize: 15),
+//                     ),
+//                   );
+//                 },
+//               ),
+//             ),
+//             Consumer<MyModel>(
+//               // ignore: avoid_types_as_parameter_names, non_constant_identifier_names
+//               builder: (context, MyModel, child) {
+//                 return ElevatedButton(onPressed: () {
+//
+//                 }, child: const Text('Press me'));
+//               },
+//             )
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+// ignore: non_constant_identifier_names
+GetModel() {
+  return MyModel(username: 'Fetching Address...');
+}
+
+class MyModel with ChangeNotifier {
+  String username;
+
+  MyModel({required this.username});
+
+  int a = 0;
+
+  void doS(var lat, var lng) async {
+    username = await getAddressFromLatLng(lat, lng);
+    notifyListeners();
   }
 }

@@ -53,7 +53,6 @@ class _PilotTripState extends State<PilotTrip> {
 
   void getPolyPoint(double slat, double slong, double dlat, double dlong,
       var waypoint) async {
-
     print(slat.toString() +
         " " +
         slong.toString() +
@@ -178,106 +177,7 @@ class _PilotTripState extends State<PilotTrip> {
           print(polylineCoordinate);
         });
       }
-      void postFunc() async {
-        // _internetStat = await isInternet();
-        // if (_internetStat == false) {
-        //   setState(() {
-        //     _internetStat = false;
-        //   });
-        //   return;
-        // }
-        // print(_internetStat);
-        var _apiResponse = await OtpMethods().postOtp(pilot:int.parse(HelperVariables.Phone),passenger:int.parse(HelperVariables.Phone) ,otp: int.parse(otp.join('')));
-        if (_apiResponse == 200) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
-      }
 
-      Future<void> _EndDialog() async {
-        return showDialog<void>(
-          context: context,
-          barrierDismissible: false, // user must tap button!
-          builder: (BuildContext context) {
-            dialogContexts = context;
-            return WillPopScope(
-              onWillPop: () async => false,
-              child: AlertDialog(
-                content: SingleChildScrollView(
-                  child: ListBody(
-                    children: <Widget>[
-                      Center(
-                        child: Column(
-                          children: [
-                            Text(
-                                'Your ride is completed! \nPlease enter the OTP shared by Pilot'),
-                            SizedBox(
-                              height: SizeConfig.safeBlockVertical * 10,
-                              width: SizeConfig.safeBlockHorizontal * 73,
-                              child: _isLoading == true
-                                  ? Center(
-                                  child: _internetStat == true
-                                      ? CircularProgressIndicator(
-                                    color: Colors.black,
-                                  )
-                                      : Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.signal_wifi_connected_no_internet_4,
-                                        size: SizeConfig.safeBlockVertical * 5,
-                                      ),
-                                      Text(
-                                        "No internet",
-                                        style: TextStyle(
-                                            color: Colors.black,
-                                            fontWeight: FontWeight.w700,
-                                            fontFamily: 'NunitoSans',
-                                            fontSize: 15),
-                                      ),
-                                    ],
-                                  ))
-                                  : ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: 4,
-                                  physics: NeverScrollableScrollPhysics(),
-                                  padding: EdgeInsets.all(10),
-                                  itemBuilder: (context, index) {
-                                    return Center(
-                                      child: Card(
-                                        color: Colors.white.withOpacity(0.85),
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(15)),
-                                        child: SizedBox(
-                                            width: SizeConfig.safeBlockHorizontal * 15,
-                                            child: Center(
-                                                child: Text(
-                                                  "${otp[index]}",
-                                                  style: TextStyle(
-                                                      color: Colors.black,
-                                                      fontWeight: FontWeight.w700,
-                                                      fontFamily: 'NunitoSans',
-                                                      fontSize: 20),
-                                                ))),
-                                      ),
-                                    );
-                                  }),
-                            )
-                          ],
-                        ),
-                      )
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      }
-
-      print(ans);
-      print(rideStarted.toString() + "thois is ride starteed");
       if (!mounted) return;
       if (ans <= 0.075 && !rideStarted) {
         if (!mounted) return;
@@ -285,9 +185,112 @@ class _PilotTripState extends State<PilotTrip> {
           showOTPs = true;
         });
       } else if (end <= 0.075) {
+        await postFunc();
         _EndDialog();
       }
     });
+  }
+
+  Future<Widget> postFunc() async {
+    // _internetStat = await isInternet();
+    // if (_internetStat == false) {
+    //   setState(() {
+    //     _internetStat = false;
+    //   });
+    //   return;
+    // }
+    var _apiResponse = await OtpMethods().postOtp(
+        pilot: int.parse(HelperVariables.Phone),
+        passenger: int.parse(HelperVariables.Phone),
+        otp: int.parse(otp.join('')));
+     print("Entered the object");
+    return ChangeNotifierProvider<Data>(
+        create: (_) => GetModel(),
+        child: Center(
+          child: Consumer<Data>(builder: (context, Data, child) {
+            if (_apiResponse == 200) {
+              print("_internetStat");
+              Data.doS(false);
+              print(Data.load);
+            }
+            return SizedBox.shrink();
+          }),
+        ));
+  }
+
+  Future<void> _EndDialog() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        dialogContexts = context;
+        return ChangeNotifierProvider<Data>(
+          create: (BuildContext context) => GetModel(),
+          child: WillPopScope(
+            onWillPop: () async => false,
+            child: AlertDialog(
+              content: SingleChildScrollView(
+                child: ListBody(
+                  children: <Widget>[
+                    Center(
+                      child: Column(
+                        children: [
+                          Text(
+                              'Your ride is completed! \nPlease enter the OTP shared by Pilot'),
+                          // ignore: avoid_types_as_parameter_names
+                          Consumer<Data>(builder: (context, Data, child) {
+                            print("Data.load:${Data.load}");
+                            return SizedBox(
+                              height: SizeConfig.safeBlockVertical * 10,
+                              width: SizeConfig.safeBlockHorizontal * 73,
+                              child: Data.load == true
+                                  ? Center(
+                                      child: CircularProgressIndicator(
+                                      color: Colors.black,
+                                    ))
+                                  : ListView.builder(
+                                      scrollDirection: Axis.horizontal,
+                                      itemCount: 4,
+                                      physics: NeverScrollableScrollPhysics(),
+                                      padding: EdgeInsets.all(10),
+                                      itemBuilder: (context, index) {
+                                        return Center(
+                                          child: Card(
+                                            color:
+                                                Colors.white.withOpacity(0.85),
+                                            shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(15)),
+                                            child: SizedBox(
+                                                width: SizeConfig
+                                                        .safeBlockHorizontal *
+                                                    15,
+                                                child: Center(
+                                                    child: Text(
+                                                  "${otp[index]}",
+                                                  style: TextStyle(
+                                                      color: Colors.black,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      fontFamily: 'NunitoSans',
+                                                      fontSize: 20),
+                                                ))),
+                                          ),
+                                        );
+                                      }),
+                            );
+                          })
+                        ],
+                      ),
+                    )
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -368,7 +371,8 @@ class _PilotTripState extends State<PilotTrip> {
                         'to': HelperVariables.otherPhone,
                         'location': "cancel"
                       }));
-                      Navigator.pushNamedAndRemoveUntil(context,Options.id, (route) => false);
+                      Navigator.of(context)
+                          .pushReplacementNamed(Options.id);
                     },
                     child: Center(
                       child: SizedBox(
@@ -510,7 +514,9 @@ class _PilotTripState extends State<PilotTrip> {
       },
     );
   }
-  var checkOnce=0;
+
+  var checkOnce = 0;
+
   @override
   Widget build(BuildContext context) {
     SizeConfig().init(context);
@@ -537,19 +543,19 @@ class _PilotTripState extends State<PilotTrip> {
                             WidgetsBinding.instance.addPostFrameCallback((_) {
                               setState(() {
                                 val = jsonDecode(snapshot.data);
-                                if (val == 'cancel' && checkOnce == 0)  {
+                                if (val == 'cancel' && checkOnce == 0) {
                                   _showMyDialog();
                                   Future.delayed(Duration(seconds: 2), () {
-                                    Navigator.pushNamedAndRemoveUntil(context,Options.id, (route) => false);
+                                    Navigator.of(context)
+                                        .pushReplacementNamed(Options.id);
                                   });
 
                                   channel!.sink.close();
-                                  checkOnce=1;
-                                }
-                               else if(val=='end' ){
-                                    Navigator.pushNamedAndRemoveUntil(context, Options.id, (route) => false);
-                                }
-                               else {
+                                  checkOnce = 1;
+                                } else if (val == 'end') {
+                                  Navigator.of(context)
+                                      .pushReplacementNamed(Options.id);
+                                } else {
                                   data[0] = val[0];
                                   data[1] = val[1];
                                 }
@@ -737,5 +743,19 @@ class _PilotTripState extends State<PilotTrip> {
           ),
         ),
         onWillPop: () async => false);
+  }
+}
+
+GetModel() {
+  return Data();
+}
+
+class Data with ChangeNotifier {
+  bool load = true;
+
+  void doS(bool loads) {
+    load = loads;
+    print("Printing listeners with change:" + load.toString());
+    notifyListeners();
   }
 }

@@ -39,22 +39,27 @@ class _SplashScreenState extends State<SplashScreen> {
   String? finalPhone;
 
   Future<bool> getUserData(var phone) async {
+    final SharedPreferences sharedPreferences =
+        await SharedPreferences.getInstance();
     // print("entered");
     var url =
         Uri.parse('http://167.71.238.162/users/user?phone=${int.parse(phone)}');
 
     http.Response response = await http.get(url, headers: header);
     var data = jsonDecode(response.body);
-    // print(data.toString());
-    if (data.length == 0 ){
+    print(data.toString());
+    if (data.length == 0) {
       return false;
-    } else if (data[0]['token']!=widget.token){
+    } else if (data[0]['token'] != widget.token) {
       return false;
+    } else {
+      sharedPreferences.setString('name', data[0]['name']);
+      sharedPreferences.setString('gender', data[0]['gender']);
+      sharedPreferences.setString('email', data[0]['email']);
+      sharedPreferences.setString('image', data[0]['image']);
+
+      return true;
     }
-    else
-      {
-        return true;
-      }
   }
 
   Future getValidation() async {

@@ -263,7 +263,7 @@ class _OtpValidationState extends State<OtpValidation> {
 
                                     await checkFirstTimeUser()
                                         ? Get.to(() => const RegisterScreen())
-                                        : Get.to(()  =>const Options());
+                                        : Get.to(() => const Options());
                                     print(HelperVariables.Phone);
                                     print("not transferred");
                                     // Navigator.pushNamed(
@@ -317,9 +317,7 @@ class _OtpValidationState extends State<OtpValidation> {
     print(data.length);
     if (data.length == 0) {
       return true;
-    }
-  else
-    {
+    } else {
       changeToken();
       setState(() {
         HelperVariables.Name = data[0]['name'];

@@ -38,8 +38,9 @@ class _OptionsState extends State<Options> {
               Button(
                 title: 'Passenger',
                 onTap: () {
-                  Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) =>
-                      FirstScreen(screenName: PassengerScreen.id)), (Route<dynamic> route) => false);
+                  Navigator.of(context).pushReplacementNamed(PassengerScreen.id);
+                  // Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) =>
+                  //     FirstScreen(screenName: PassengerScreen.id)), (Route<dynamic> route) => false);
                 },
               ),
               SizedBox(
@@ -48,8 +49,9 @@ class _OptionsState extends State<Options> {
               Button(
                 title: 'Pilot',
                 onTap: () {
-                  Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) =>
-                      FirstScreen(screenName:PilotScreen.id)), (Route<dynamic> route) => false);
+                  Navigator.of(context).pushReplacementNamed(PilotScreen.id);
+                  // Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) =>
+                  //     FirstScreen(screenName:PilotScreen.id)), (Route<dynamic> route) => false);
                 },
               ),
             ],

@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class OtpMethods {
 
-  Future<int> postOtp({required int pilot,required int passenger,required int otp}) async {
+  Future<int> postOtp({required int pilot,required int passenger     ,required int otp}) async {
     final Uri url = Uri.parse("http://139.59.44.53/otp/postOTP");
     final body = jsonEncode({
       "pilot": pilot,
