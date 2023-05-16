@@ -87,7 +87,7 @@ class _PassengerScreenState extends State<PassengerScreen> {
 
   void getUserInfo() async {
     var res = await http.get(Uri.parse(
-        'http://167.71.238.162/users/user?phone=${HelperVariables.Phone}'));
+        'http://209.38.239.47/users/user?phone=${HelperVariables.Phone}'));
     var data = jsonDecode(res.body);
     print(data);
   }
@@ -233,9 +233,9 @@ class _PassengerScreenState extends State<PassengerScreen> {
     // var destination = geohasher.encode(des.longitude, des.latitude, precision: 6);
     Uri url;
     if (!isSentOnce) {
-      url = Uri.parse('http://139.59.44.53/passengers/pushNewUser');
+      url = Uri.parse('http://209.38.239.190/passengers/pushNewUser');
     } else {
-      url = Uri.parse('http://139.59.44.53/passengers/updateUser');
+      url = Uri.parse('http://209.38.239.190/passengers/updateUser');
     }
 
     Map<String, String> header = {
@@ -259,14 +259,14 @@ class _PassengerScreenState extends State<PassengerScreen> {
 
   void deleteUser(int phone) async {
     var url =
-    Uri.parse('http://139.59.44.53/passengers/deleteUser?phone=$phone');
+    Uri.parse('http://209.38.239.190/passengers/deleteUser?phone=$phone');
     var resp = await http.delete(url);
     print(resp.body);
   }
 
   void searchPilot() async {
     var url = Uri.parse(
-        'http://139.59.44.53/passengers/getpilot?long=${PassengerScreen.des.longitude}&lat=${PassengerScreen.des
+        'http://209.38.239.190/passengers/getpilot?long=${PassengerScreen.des.longitude}&lat=${PassengerScreen.des
             .latitude}&currLong=${src.longitude}&currLat=${src
             .latitude}&phone=${HelperVariables.Phone}');
     var resp = await http.get(url);
@@ -282,7 +282,7 @@ class _PassengerScreenState extends State<PassengerScreen> {
   void initailizePassengerWebsocket() async {
     final channel =
     WebSocketChannel.connect(
-        Uri.parse('ws://139.59.44.53:3001?phone=${HelperVariables.Phone}'));
+        Uri.parse('ws://209.38.239.190:3001?phone=${HelperVariables.Phone}'));
     channel.sink.add("Hello From flutter");
     setState(() {
       passengerStream = channel.stream;

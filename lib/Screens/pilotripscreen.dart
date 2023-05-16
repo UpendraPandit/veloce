@@ -104,7 +104,7 @@ class _PilotTripState extends State<PilotTrip> {
 
   Future<void> closeSocket(int phone) async {
     var response = await http
-        .get(Uri.parse('http://139.59.44.53/closeTheConnection?phone=$phone'));
+        .get(Uri.parse('http://209.38.239.190/closeTheConnection?phone=$phone'));
     var data = jsonDecode(response.body);
     print(data);
   }
@@ -185,13 +185,13 @@ class _PilotTripState extends State<PilotTrip> {
           showOTPs = true;
         });
       } else if (end <= 0.075) {
-        await postFunc();
+        postFunc();
         _EndDialog();
       }
     });
   }
 
-  Future<Widget> postFunc() async {
+  void postFunc() async {
     // _internetStat = await isInternet();
     // if (_internetStat == false) {
     //   setState(() {
@@ -203,20 +203,16 @@ class _PilotTripState extends State<PilotTrip> {
         pilot: int.parse(HelperVariables.Phone),
         passenger: int.parse(HelperVariables.Phone),
         otp: int.parse(otp.join('')));
-     print("Entered the object");
-    return ChangeNotifierProvider<Data>(
-        create: (_) => GetModel(),
-        child: Center(
-          child: Consumer<Data>(builder: (context, Data, child) {
-            if (_apiResponse == 200) {
-              print("_internetStat");
-              Data.doS(false);
-              print(Data.load);
-            }
-            return SizedBox.shrink();
-          }),
-        ));
+    print("Entered the object");
+
+    if (_apiResponse == 200) {
+      setState(() {
+        loading = false;
+      });
+    }
   }
+
+  var loading = false;
 
   Future<void> _EndDialog() async {
     return showDialog<void>(
@@ -229,21 +225,29 @@ class _PilotTripState extends State<PilotTrip> {
           child: WillPopScope(
             onWillPop: () async => false,
             child: AlertDialog(
+              backgroundColor: Color.fromARGB(255, 227, 227, 227),
               content: SingleChildScrollView(
                 child: ListBody(
                   children: <Widget>[
                     Center(
                       child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           Text(
-                              'Your ride is completed! \nPlease enter the OTP shared by Pilot'),
+                            'Your ride is completed! \n\nPlease share this OTP with the passenger!',
+                            style: TextStyle(
+                                fontSize: 15,
+                                fontFamily: 'NunitoSans',
+                                color: Color.fromRGBO(30, 60, 87, 1),
+                                fontWeight: FontWeight.w600),
+                          ),
                           // ignore: avoid_types_as_parameter_names
                           Consumer<Data>(builder: (context, Data, child) {
                             print("Data.load:${Data.load}");
                             return SizedBox(
                               height: SizeConfig.safeBlockVertical * 10,
                               width: SizeConfig.safeBlockHorizontal * 73,
-                              child: Data.load == true
+                              child: loading == true
                                   ? Center(
                                       child: CircularProgressIndicator(
                                       color: Colors.black,
@@ -371,8 +375,7 @@ class _PilotTripState extends State<PilotTrip> {
                         'to': HelperVariables.otherPhone,
                         'location': "cancel"
                       }));
-                      Navigator.of(context)
-                          .pushReplacementNamed(Options.id);
+                      Navigator.of(context).pushReplacementNamed(Options.id);
                     },
                     child: Center(
                       child: SizedBox(
@@ -447,7 +450,7 @@ class _PilotTripState extends State<PilotTrip> {
 
   void getDataOfOtherUser() async {
     var response = await http.get(Uri.parse(
-        'http://167.71.238.162/users/user?phone=${HelperVariables.otherPhone}'));
+        'http://209.38.239.47/users/user?phone=${HelperVariables.otherPhone}'));
     var data = jsonDecode(response.body);
 
     setState(() {
@@ -504,7 +507,13 @@ class _PilotTripState extends State<PilotTrip> {
               child: ListBody(
                 children: const <Widget>[
                   Center(
-                    child: Text('Sorry,your passenger has canceled the ride!'),
+                    child: Text('Sorry,your passenger has canceled the ride!',
+                    style: TextStyle(
+                        fontSize: 16.5,
+                        fontFamily: 'Nunito Sans',
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white),
+                    ),
                   )
                 ],
               ),

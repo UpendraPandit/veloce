@@ -43,7 +43,7 @@ class _SplashScreenState extends State<SplashScreen> {
         await SharedPreferences.getInstance();
     // print("entered");
     var url =
-        Uri.parse('http://167.71.238.162/users/user?phone=${int.parse(phone)}');
+        Uri.parse('http://209.38.239.47/users/user?phone=${int.parse(phone)}');
 
     http.Response response = await http.get(url, headers: header);
     var data = jsonDecode(response.body);

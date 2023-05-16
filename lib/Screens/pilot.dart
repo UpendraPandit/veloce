@@ -160,7 +160,7 @@ class _PilotScreenState extends State<PilotScreen> {
 
   void getTheDetailsOfRiders() async {
     var response = await http
-        .get(Uri.parse('http://167.71.238.162/users/user?phone=7452976914'));
+        .get(Uri.parse('http://209.38.239.47/users/user?phone=7452976914'));
     var data = jsonDecode(response.body);
     print(data);
   }
@@ -288,13 +288,13 @@ class _PilotScreenState extends State<PilotScreen> {
 
   void getUserInfo() async {
     var res = await http.get(Uri.parse(
-        'http://167.71.238.162/users/user?phone=${HelperVariables.Phone}'));
+        'http://209.38.239.47/users/user?phone=${HelperVariables.Phone}'));
     var data = jsonDecode(res.body);
   }
 
   Future acceptUser(int passengerPhone, int pilotPhone, var abc) async {
     var res = await http.get(Uri.parse(
-        'http://139.59.44.53/accepted?pilot=$pilotPhone&passenger=$passengerPhone'));
+        'http://209.38.239.190/accepted?pilot=$pilotPhone&passenger=$passengerPhone'));
     print("Is it because of this?!");
     print(res.body);
     if (!mounted) {

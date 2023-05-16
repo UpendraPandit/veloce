@@ -3,7 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import 'package:provider/provider.dart';
 import 'package:veloce/Authorization/OtpValidate.dart';
+import 'package:veloce/NoInternet/app_scaffold.dart';
+import 'package:veloce/Service/network_service.dart';
 import '../sizeConfig.dart';
 import 'package:http/http.dart' as http;
 
@@ -126,7 +129,7 @@ class _PhoneAuthState extends State<PhoneAuth> {
   Future<bool> checkForDuplicateUser() async {
     print("entered");
     var url = Uri.parse(
-        'http://167.71.238.162/users/user?phone=${int.parse(PhoneAuth.phone.toString())}');
+        'http://209.38.239.47/users/user?phone=${int.parse(PhoneAuth.phone.toString())}');
     print(PhoneAuth.phone);
     http.Response response = await http.get(url, headers: header);
     var data = jsonDecode(response.body);
@@ -207,7 +210,11 @@ class _PhoneAuthState extends State<PhoneAuth> {
         mask: ' ### ### ####', filter: {"#": RegExp(r'[0-9]')});
 
     bool checkAbsorb = false;
-    return WillPopScope(
+    var networkStatus = Provider.of<NetworkStatus>(context);
+    if (networkStatus == NetworkStatus.offline) {
+      return noInternetScaff();
+    } else
+      return WillPopScope(
      onWillPop: ()async=>false,
       child: GestureDetector(
         onTap: () {
@@ -315,7 +322,7 @@ class _PhoneAuthState extends State<PhoneAuth> {
                       Material(
                         child: InkWell(
                           onTap: () async {
-                            _showMyDialog();
+
                             var temp = PhoneAuth.phone;
                             setState(() {
                               PhoneAuth.phone = "";
@@ -334,7 +341,7 @@ class _PhoneAuthState extends State<PhoneAuth> {
                             // bool val = await checkForDuplicateUser();
                             print("Hello I have entered here!");
                             if (PhoneAuth.phone.length == 10) {
-
+                              _showMyDialog();
                                 setState(() {
                                   checkAbsorb = true;
                                   //  _showMyDialog();
@@ -360,6 +367,7 @@ class _PhoneAuthState extends State<PhoneAuth> {
                                       (String verificationId) {},
                                 );
                               }
+                            _NumberError();
 
                           },
                           child: SizedBox(

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:veloce/Screens/cross_feedback.dart';
 import 'package:veloce/passenger_popup.dart';
 import 'package:veloce/pilot_popup.dart';
 
@@ -138,11 +139,12 @@ class MyApp extends StatelessWidget {
         // NotificationPage.id: (_) => const NotificationPage(),
         PassengerTrip.id: (_) => const PassengerTrip(),
         PilotTrip.id: (_) => const PilotTrip(),
+        CrossFeedbackDialog.id:(_)=>CrossFeedbackDialog()
         // List.id: (_) => const List(),
         // PilotPopupDialog.id: (_) => PilotPopupDialog(pilot: 0, passenger:0,),
         // PassengerPopupDialog.id: (_) => PassengerPopupDialog(pilot: 0, passenger: 0,),
       },
-      initialRoute: SplashScreen.id,
+      initialRoute:SplashScreen.id,
       // ),
     );
   }

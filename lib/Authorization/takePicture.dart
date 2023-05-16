@@ -27,7 +27,7 @@ class _ClickPictureState extends State<ClickPicture> {
 
   var redirect = false;
 
-  var url = Uri.parse('http://167.71.238.162/createNewUser');
+  var url = Uri.parse('http://209.38.239.47/createNewUser');
 
 
 
@@ -38,7 +38,7 @@ class _ClickPictureState extends State<ClickPicture> {
       "name": HelperVariables.Name,
       "email": HelperVariables.Email,
       "gender": HelperVariables.gender,
-      "image": 'https://nauftimage.sgp1.digitaloceanspaces.com/${HelperVariables.img_url}',
+      "image": 'https://imagenauft.fra1.digitaloceanspaces.com/${HelperVariables.img_url}',
       "token": widget.token
     });
     print(body);
@@ -60,7 +60,7 @@ class _ClickPictureState extends State<ClickPicture> {
   }
 
   void upload(context, File imageFile) async {
-    const String url = 'http://64.226.69.20/uploads';
+    const String url = 'http://209.38.239.223/uploads';
 
     var request = http.MultipartRequest('POST', Uri.parse(url));
     print(imageFile.path);

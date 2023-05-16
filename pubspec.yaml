@@ -67,6 +67,10 @@ dependencies:
   socket_io_client: ^2.0.1
   web_socket_channel: ^2.3.0
   audioplayers: ^3.0.0
+  flutter_rating_bar: ^4.0.1
+  smooth_star_rating: ^1.1.1
+  smooth_star_rating_null_safety: ^1.0.4+2
+  connectivity_plus: ^4.0.0
 #  connectivity_plus: ^2.0.2
 #  data_connection_checker: ^0.3.4
 

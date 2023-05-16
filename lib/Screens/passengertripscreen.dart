@@ -161,7 +161,7 @@ class _PassengerTripState extends State<PassengerTrip> {
 
   void initailizeWebsocket() async {
     channel = WebSocketChannel.connect(
-        Uri.parse('ws://139.59.44.53:3005?phone=${HelperVariables.Phone}'));
+        Uri.parse('ws://209.38.239.190:3005?phone=${HelperVariables.Phone}'));
 
     // channel.sink.add(HelperVariables.passengercurrentLocation);
     setState(() {
@@ -179,13 +179,13 @@ class _PassengerTripState extends State<PassengerTrip> {
 
   Future<void> deleteFromIds(int phone) async {
     var response = await http
-        .get(Uri.parse('http://139.59.44.53/deleteFromIds?phone=$phone'));
+        .get(Uri.parse('http://209.38.239.190/deleteFromIds?phone=$phone'));
     print(response.body);
   }
 
   Future<void> closeSocket(int phone) async {
     var response = await http
-        .get(Uri.parse('http://139.59.44.53/closeTheConnection?phone=$phone'));
+        .get(Uri.parse('http://209.38.239.190/closeTheConnection?phone=$phone'));
     var data = jsonDecode(response.body);
     print(data);
   }
@@ -200,7 +200,7 @@ class _PassengerTripState extends State<PassengerTrip> {
 
   void getDataOfOtherUser() async {
     var response = await http.get(
-        Uri.parse('http://167.71.238.162/users/user?phone=${widget.phone}'));
+        Uri.parse('http://209.38.239.47/users/user?phone=${widget.phone}'));
     var data = jsonDecode(response.body);
     print(data);
     if (!mounted) return;
@@ -250,13 +250,15 @@ class _PassengerTripState extends State<PassengerTrip> {
   int x = 0;
 
   void validateInput(BuildContext context) async {
+    print(x);
     var _apiResponse = await OtpMethods().validateOtp(
-        otp: x,
+        otp:x,
         pilot: widget.phone!,
         passenger: int.parse(HelperVariables.Phone));
     if (_apiResponse.body == "true") {
       // Navigator.pop(this.context);
       channel!.sink.add(jsonEncode({'to': widget.phone, 'location': 'end'}));
+      OtpMethods().deleteOtp(otp: x, pilot: widget.phone!, passenger: int.parse(HelperVariables.Phone));
       Future.delayed(Duration(seconds: 1), () {
         Navigator.pushReplacementNamed(
             context, Options.id);
@@ -269,24 +271,40 @@ class _PassengerTripState extends State<PassengerTrip> {
       ));
     }
   }
-
+  var money;
   Future<void> _EndDialog() async {
     return showDialog<void>(
       context: context,
       barrierDismissible: false, // user must tap button!
       builder: (BuildContext context) {
         dialogContexts = context;
+
         return WillPopScope(
           onWillPop: () async => false,
           child: AlertDialog(
+            backgroundColor: Color.fromARGB(255, 227, 227, 227),
             content: SingleChildScrollView(
               child: ListBody(
+
                 children: <Widget>[
                   Center(
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        Text(
-                            'Your ride is completed! \nPlease enter the OTP shared by Pilot'),
+                        Material(
+                               color: Colors.transparent,
+                          child: Text(
+                              'Your ride is completed! \n\n'
+                                  'Please pay $money to the Pilot by any method you would like to pay\n\n'
+                                 'After completing the payment, please enter the OTP shared by Pilot to complete the ride',
+                          style: TextStyle(
+                              fontSize: 15,
+                              fontFamily: 'NunitoSans',
+                              color: Color.fromRGBO(30, 60, 87, 1),
+                              fontWeight: FontWeight.w600
+                          ),
+                          ),
+                        ),
                         SizedBox(
                           height: SizeConfig.safeBlockVertical * 9,
                           width: SizeConfig.safeBlockHorizontal * 87,

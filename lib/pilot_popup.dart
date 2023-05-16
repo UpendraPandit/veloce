@@ -25,10 +25,10 @@ class _PilotPopupDialogState extends State<PilotPopupDialog> {
     if (_apiResponse.body == "true") {
       // Navigator.pop(this.context);
       if(!mounted)return;
-      setState(() {
+      setState(()async {
         showOTPs = false;
         rideStarted = true;
-
+        OtpMethods().deleteOtp(otp: x, pilot: widget.pilot, passenger: widget.passenger);
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
