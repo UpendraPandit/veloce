@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:veloce/Authorization/phoneAuth.dart';
+import 'package:veloce/Profile/first.dart';
 import 'package:veloce/Screens/option.dart';
 import 'dart:convert';
 import '../sizeConfig.dart';
@@ -26,7 +27,7 @@ class _SplashScreenState extends State<SplashScreen> {
       Timer(
           const Duration(seconds: 2),
           () => Get.to(
-              () => finalPhone == null ? const PhoneAuth() : const Options()));
+              () => finalPhone == null ? const PhoneAuth() : const firstpage()));
     });
 
     // TODO: implement initState

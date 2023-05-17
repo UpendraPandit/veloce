@@ -1,8 +1,11 @@
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:veloce/Authorization/phoneAuth.dart';
 import 'package:veloce/Helper/HelperVariables.dart';
 import 'package:veloce/Authorization/takePicture.dart';
+import '../NoInternet/app_scaffold.dart';
+import '../Service/network_service.dart';
 import '../sizeConfig.dart';
 import 'package:email_validator/email_validator.dart';
 
@@ -83,7 +86,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     SizeConfig().init(context);
-    return WillPopScope(
+    var networkStatus = Provider.of<NetworkStatus>(context);
+    if (networkStatus == NetworkStatus.offline) {
+      return noInternetScaff();
+    } else
+      return WillPopScope(
       onWillPop: () async => false,
       child: GestureDetector(
         onTap: () {
@@ -200,7 +207,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     width: SizeConfig.safeBlockHorizontal * 70,
                     child: TextFormField(
                         onChanged: (val) {
-                          email = val;
+                          email = val.trim();
                         },
                         style: const TextStyle(
                             color: Colors.black,

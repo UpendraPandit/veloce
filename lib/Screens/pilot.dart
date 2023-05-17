@@ -22,6 +22,9 @@ import 'package:flutter_google_places/flutter_google_places.dart';
 import 'package:dart_geohash/dart_geohash.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../NoInternet/app_scaffold.dart';
+import '../Service/network_service.dart';
+
 var wayPointVal = const LatLng(0.0, 0.0);
 
 Future<String> getAddressFromLatLng(double lat, double lng) async {
@@ -269,7 +272,7 @@ class _PilotScreenState extends State<PilotScreen> {
       "updatePolyLines": {"coordinates": updatePolyLines, "type": "LineString"},
     });
 
-    var url = Uri.parse('http://139.59.44.53/pilots/updateUser');
+    var url = Uri.parse('http://209.38.239.190/pilots/updateUser');
     var response = await http.put(url, body: msg, headers: header);
     print("User updated");
     print("${response.body}kuch ni aaya");
@@ -278,7 +281,7 @@ class _PilotScreenState extends State<PilotScreen> {
 
   void initailizeWebsocket() async {
     final channel = WebSocketChannel.connect(
-        Uri.parse('ws://139.59.44.53:3001?phone=${HelperVariables.Phone}'));
+        Uri.parse('ws://209.38.239.190:3001?phone=${HelperVariables.Phone}'));
     channel.sink.add("Hello From flutter");
     setState(() {
       stream = channel.stream;
@@ -316,9 +319,9 @@ class _PilotScreenState extends State<PilotScreen> {
     print(destination);
     Uri url;
     if (!isSentOnce) {
-      url = Uri.parse('http://139.59.44.53/pilots/pushNewUser');
+      url = Uri.parse('http://209.38.239.190/pilots/pushNewUser');
     } else {
-      url = Uri.parse('http://139.59.44.53/pilots/updateUser');
+      url = Uri.parse('http://209.38.239.190/pilots/updateUser');
     }
 
     Map<String, String> header = {
@@ -375,7 +378,7 @@ class _PilotScreenState extends State<PilotScreen> {
 
   void deleteUser(int phone) async {
     print("Deleting the phone");
-    var url = Uri.parse('http://139.59.44.53/pilots/deleteUser?phone=$phone');
+    var url = Uri.parse('http://209.38.239.190/pilots/deleteUser?phone=$phone');
     var resp = await http.delete(url);
     print('IS this the ${resp.body}');
   }
@@ -411,7 +414,11 @@ class _PilotScreenState extends State<PilotScreen> {
   Widget build(BuildContext context) {
     SizeConfig().init(context);
     print(FirstScreen.latitude);
-    return ChangeNotifierProvider<MyModel>(
+    var networkStatus = Provider.of<NetworkStatus>(context);
+    if (networkStatus == NetworkStatus.offline) {
+      return noInternetScaff();
+    } else
+      return ChangeNotifierProvider<MyModel>(
         create: (BuildContext context) => GetModel(),
         child: WillPopScope(
           onWillPop: () async {

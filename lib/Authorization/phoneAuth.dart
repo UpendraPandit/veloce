@@ -93,7 +93,7 @@ class _PhoneAuthState extends State<PhoneAuth> {
             GestureDetector(
               onTap: () {
                 Navigator.pop(dialogContext);
-                Navigator.of(context).pop();
+
               },
               child: Center(
                 child: SizedBox(
@@ -205,6 +205,7 @@ class _PhoneAuthState extends State<PhoneAuth> {
 
   @override
   Widget build(BuildContext context) {
+
     SizeConfig().init(context);
     var maskFormatter = MaskTextInputFormatter(
         mask: ' ### ### ####', filter: {"#": RegExp(r'[0-9]')});
@@ -367,7 +368,11 @@ class _PhoneAuthState extends State<PhoneAuth> {
                                       (String verificationId) {},
                                 );
                               }
-                            _NumberError();
+                            else
+                              {
+                                _NumberError();
+                              }
+
 
                           },
                           child: SizedBox(

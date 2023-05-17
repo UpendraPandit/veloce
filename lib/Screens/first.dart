@@ -30,38 +30,57 @@ class _FirstScreenState extends State<FirstScreen> {
     PermissionStatus permissionGranted;
     LocationData locationData;
     serviceEnabled = await location.serviceEnabled();
-
-    if (!serviceEnabled) {
+    print("locationStatus: $serviceEnabled");
+    while (!serviceEnabled) {
+      print("ServiceStatus: $serviceEnabled");
       serviceEnabled = await location.requestService();
-      if (!serviceEnabled) {
-        return;
-      }
     }
+    // if (!serviceEnabled) {
+    //return;
+    //}
+    //}
+
+    //await Future.delayed(const Duration(seconds: 2), () {});
+
+    // while (
+    //     !serviceEnabled); //so that permission dialog not get popped up before service request.
+
     permissionGranted = await location.hasPermission();
-    if (permissionGranted == PermissionStatus.denied) {
+    print("permissionStatus1: $permissionGranted");
+
+    while (permissionGranted == PermissionStatus.denied) //{
+        {
+      print("permissionStatus2: $permissionGranted");
       permissionGranted = await location.requestPermission();
-      if (permissionGranted != PermissionStatus.granted) {
-        return;
-      }
     }
+
+    print("permissionStatus3: $permissionGranted");
+    // while (permissionGranted !=
+    //     PermissionStatus.granted); //to avoid going to next screen
+    // if (permissionGranted != PermissionStatus.granted) {
+    //return;
+    // }
+    //}
 
     locationData = await location.getLocation();
-    if(!mounted)return;
-  setState(() {
-    FirstScreen.latitude = locationData.latitude;
-        print("setted");
-  });
+    if (!mounted) return;
+    setState(() {
+      FirstScreen.latitude = locationData.latitude;
+      Navigator.pushNamedAndRemoveUntil(
+          context, widget.screenName, (Route<dynamic> route) => false);
+      print("setted");
+    });
     FirstScreen.longitude = locationData.longitude;
     FirstScreen.lat = FirstScreen.latitude.toString();
     FirstScreen.long = FirstScreen.longitude.toString();
-
   }
 
   @override
   void initState() {
     getLocation();
     print('error');
-    Future.delayed(const Duration(seconds:4)).then((value) => Navigator.pushNamedAndRemoveUntil(context,widget.screenName,(Route<dynamic> route) => false));
+    // Future.delayed(const Duration(seconds: 4)).then((value) =>
+
     super.initState();
   }
 
@@ -75,7 +94,10 @@ class _FirstScreenState extends State<FirstScreen> {
           height: SizeConfig.safeBlockVertical * 100,
           width: SizeConfig.safeBlockHorizontal * 100,
           child: const Center(
-            child: CircularProgressIndicator(color: Colors.black,strokeWidth: 3.5,),
+            child: CircularProgressIndicator(
+              color: Colors.black,
+              strokeWidth: 3.5,
+            ),
           ),
         ),
       ),

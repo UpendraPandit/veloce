@@ -5,6 +5,7 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_api_headers/google_api_headers.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
+import 'package:provider/provider.dart';
 import 'package:veloce/Helper/HelperVariables.dart';
 import 'package:veloce/Consts/constants.dart';
 import 'package:google_maps_webservice/places.dart' as gmws;
@@ -17,6 +18,9 @@ import 'package:dart_geohash/dart_geohash.dart';
 
 import 'package:lottie/lottie.dart' as lottie;
 import 'package:web_socket_channel/web_socket_channel.dart';
+
+import '../NoInternet/app_scaffold.dart';
+import '../Service/network_service.dart';
 
 // import 'package:geolocator/geolocator.dart';
 bool polyCheck = false;
@@ -265,12 +269,27 @@ class _PassengerScreenState extends State<PassengerScreen> {
   }
 
   void searchPilot() async {
+    print("Entered search pilot");
+    print(PassengerScreen.des.longitude);
+    print(PassengerScreen.des
+        .latitude);
+    print(src.longitude);
+    print(src.latitude);
+    print(HelperVariables.Phone);
+    print(PassengerScreen.des.longitude.runtimeType);
+    print(PassengerScreen.des.latitude.runtimeType);
+
+    print(HelperVariables.Phone.runtimeType);
+
+
     var url = Uri.parse(
         'http://209.38.239.190/passengers/getpilot?long=${PassengerScreen.des.longitude}&lat=${PassengerScreen.des
             .latitude}&currLong=${src.longitude}&currLat=${src
             .latitude}&phone=${HelperVariables.Phone}');
     var resp = await http.get(url);
     var data=jsonDecode(resp.body);
+    print(data);
+    print("yahan tak toh aagya");
   //Added the setState here which was not there, the risk is it may ctash
     setState(() {
       waypoint=data['waypoint'];
@@ -320,8 +339,11 @@ class _PassengerScreenState extends State<PassengerScreen> {
   @override
   Widget build(BuildContext context) {
     SizeConfig().init(context);
-
-    return WillPopScope(
+    var networkStatus = Provider.of<NetworkStatus>(context);
+    if (networkStatus == NetworkStatus.offline) {
+      return noInternetScaff();
+    } else
+      return WillPopScope(
       onWillPop: () async {
         deleteUser(int.parse(HelperVariables.Phone));
         return true;
@@ -567,7 +589,7 @@ class _PassengerScreenState extends State<PassengerScreen> {
                             elevation: 5,
                             child: const Center(
                               child: Text(
-                                'Pick up',
+                                'Pick up location',
                                 style: TextStyle(
                                   fontFamily: 'Nunito Sans',
                                   fontWeight: FontWeight.w900,
@@ -728,7 +750,7 @@ class _PassengerScreenState extends State<PassengerScreen> {
                                 elevation: 5,
                                 child: const Center(
                                   child: Text(
-                                    'Drop',
+                                    'Destination',
                                     style: TextStyle(
                                       fontFamily: 'Nunito Sans',
                                       fontWeight: FontWeight.w900,
@@ -798,6 +820,7 @@ class _PassengerScreenState extends State<PassengerScreen> {
                                                 destiname:searchLocation
                                             );
                                           }),(route)=>false);
+
 
                                 });
 

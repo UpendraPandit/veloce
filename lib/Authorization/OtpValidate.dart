@@ -5,11 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pinput/pinput.dart';
 import 'package:pinput/src/pinput.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:veloce/Helper/HelperVariables.dart';
 import 'package:veloce/Authorization/phoneAuth.dart';
 import 'package:veloce/Authorization/registrationScreen.dart';
+import 'package:veloce/Profile/first.dart';
+import '../NoInternet/app_scaffold.dart';
 import '../Screens/option.dart';
+import '../Service/network_service.dart';
 import '../sizeConfig.dart';
 
 class OtpValidation extends StatefulWidget {
@@ -153,7 +157,11 @@ class _OtpValidationState extends State<OtpValidation> {
 
     SizeConfig().init(context);
 
-    return WillPopScope(
+    var networkStatus = Provider.of<NetworkStatus>(context);
+    if (networkStatus == NetworkStatus.offline) {
+      return noInternetScaff();
+    } else
+      return WillPopScope(
       onWillPop: () async {
         setState(() {
           absorbpointer = false;
@@ -262,7 +270,7 @@ class _OtpValidationState extends State<OtpValidation> {
 
                                     await checkFirstTimeUser()
                                         ? Get.to(() => const RegisterScreen())
-                                        : Get.to(() => const Options());
+                                        : Get.to(() => const firstpage());
                                     print(HelperVariables.Phone);
                                     print("not transferred");
                                     // Navigator.pushNamed(

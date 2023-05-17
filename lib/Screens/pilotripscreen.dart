@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:veloce/Profile/first.dart';
 import 'dart:math';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:provider/provider.dart';
+import 'package:smooth_star_rating_null_safety/smooth_star_rating_null_safety.dart';
+import 'package:veloce/Screens/cross_feedback.dart';
 import 'package:veloce/Screens/passenger.dart';
 import 'package:veloce/Screens/pilot.dart';
 import 'package:veloce/Screens/splashscreen.dart';
@@ -88,6 +92,12 @@ class _PilotTripState extends State<PilotTrip> {
     }
   }
 
+  double starRating = 2, experienceRating = 3;
+
+  final _controller = TextEditingController();
+
+  String customFeedback = "";
+
   WebSocketChannel? channel; //changed the var channel to WebSocketChannel
   void setLocations() {}
   var stream;
@@ -103,15 +113,15 @@ class _PilotTripState extends State<PilotTrip> {
   // }
 
   Future<void> closeSocket(int phone) async {
-    var response = await http
-        .get(Uri.parse('http://209.38.239.190/closeTheConnection?phone=$phone'));
+    var response = await http.get(
+        Uri.parse('http://209.38.239.190/closeTheConnection?phone=$phone'));
     var data = jsonDecode(response.body);
     print(data);
   }
 
   Future<void> deleteFromIds(int phone) async {
     var response = await http
-        .get(Uri.parse('http://139.59.44.53/deleteFromIds?phone=$phone'));
+        .get(Uri.parse('http://209.38.239.190/deleteFromIds?phone=$phone'));
 
     print(response.body);
   }
@@ -184,25 +194,21 @@ class _PilotTripState extends State<PilotTrip> {
         setState(() {
           showOTPs = true;
         });
-      } else if (end <= 0.075) {
+      } else if (end <= 0.075 && checkEnd == 0) {
         postFunc();
         _EndDialog();
+        checkEnd = 1;
       }
     });
   }
 
   void postFunc() async {
-    // _internetStat = await isInternet();
-    // if (_internetStat == false) {
-    //   setState(() {
-    //     _internetStat = false;
-    //   });
-    //   return;
-    // }
+    print("Entered the object2");
     var _apiResponse = await OtpMethods().postOtp(
         pilot: int.parse(HelperVariables.Phone),
-        passenger: int.parse(HelperVariables.Phone),
-        otp: int.parse(otp.join('')));
+        passenger: HelperVariables.otherPhone,
+        otp: int.parse(otp.join('')),
+        type: "end");
     print("Entered the object");
 
     if (_apiResponse == 200) {
@@ -214,15 +220,264 @@ class _PilotTripState extends State<PilotTrip> {
 
   var loading = false;
 
+  Future<void> _FeedbackDialog() async {
+    return showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return SingleChildScrollView(
+            child: AlertDialog(
+              shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              backgroundColor: Colors.white,
+              title: const Text(
+                "How was your latest ride?",
+                style: TextStyle(fontFamily: 'Nunito Sans'),
+              ),
+              titlePadding: EdgeInsets.only(
+                  top: SizeConfig.safeBlockVertical * 2,
+                  left: SizeConfig.safeBlockVertical * 2,
+                  bottom: SizeConfig.safeBlockVertical),
+              actions: <Widget>[
+                SizedBox(
+                  height: SizeConfig.safeBlockVertical * 2,
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: SizeConfig.safeBlockVertical,
+                      vertical: SizeConfig.safeBlockVertical),
+                  child: Center(
+                    child: Text(
+                      "Rate your Co-rider",
+                      style: TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Nunito Sans',
+                          fontSize: 16.5),
+                    ),
+                  ),
+                ),
+                Center(
+                    child: SmoothStarRating(
+                      size: 35,
+                      color: Colors.amber,
+                      allowHalfRating: true,
+                      borderColor: Colors.grey,
+                      defaultIconData: Icons.directions_bike,
+                      halfFilledIconData: Icons.directions_bike,
+                      filledIconData: Icons.directions_bike,
+                      spacing: 10,
+                      rating: starRating,
+                      onRatingChanged: (rating) {
+                        starRating = rating;
+                        print(starRating);
+                        setState(() {});
+                      },
+                    )),
+                SizedBox(
+                  height: SizeConfig.safeBlockVertical * 2,
+                ),
+                Padding(
+                  padding: EdgeInsets.only(top: 50),
+                  child: Center(
+                    child: Text(
+                      "Riding experience",
+                      style: TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Nunito Sans',
+                          fontSize: 16.5),
+                    ),
+                  ),
+                ),
+                Padding(
+                    padding: EdgeInsets.all(10),
+                    child: Center(
+                        child: RatingBar.builder(
+                          glow: false,
+                          unratedColor: Colors.grey,
+                          initialRating: 3,
+                          itemCount: 5,
+                          itemBuilder: (context, index) {
+                            switch (index) {
+                              case 0:
+                                return Icon(
+                                  Icons.sentiment_very_dissatisfied,
+                                  color: Colors.red,
+                                );
+                              case 1:
+                                return Icon(
+                                  Icons.sentiment_dissatisfied,
+                                  color: Colors.redAccent,
+                                );
+                              case 2:
+                                return Icon(
+                                  Icons.sentiment_neutral,
+                                  color: Colors.amber,
+                                );
+                              case 3:
+                                return Icon(
+                                  Icons.sentiment_satisfied,
+                                  color: Colors.lightGreen,
+                                );
+                              case 4:
+                                return Icon(
+                                  Icons.sentiment_very_satisfied,
+                                  color: Colors.green,
+                                );
+                              default:
+                                return Icon(Icons.close);
+                            }
+                          },
+                          onRatingUpdate: (rating) {
+                            experienceRating = rating;
+                            // print("Experience Rating is: $experienceRating");
+                          },
+                        ))),
+                SizedBox(
+                  height: SizeConfig.safeBlockVertical * 2,
+                ),
+                Visibility(
+                  visible: true ,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: SizeConfig.safeBlockVertical * 2,
+                        vertical: SizeConfig.safeBlockVertical * 2),
+                    child: Align(
+                      alignment:
+                      Alignment(0, SizeConfig.safeBlockVertical * -0.09),
+                      child: Material(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Text(
+                                "Did the passenger pay you the amount?",
+                                style: TextStyle(
+                                    color: Colors.grey,
+                                    fontWeight: FontWeight.w600,
+                                    fontFamily: 'Nunito Sans',
+                                    fontSize: 16.5),
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  ElevatedButton(
+                                      style: ButtonStyle(
+                                          backgroundColor:
+                                          MaterialStateProperty.all(
+                                              Colors.black)),
+                                      onPressed: () {},
+                                      child: Text(
+                                        'NO',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                            fontFamily: 'Nunito Sans',
+                                            fontSize: 14),
+                                      )),
+                                  ElevatedButton(
+                                      style: ButtonStyle(
+                                          backgroundColor:
+                                          MaterialStateProperty.all(
+                                              Colors.black)),
+                                      onPressed: () {},
+                                      child: Text(
+                                        'Yes',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                            fontFamily: 'Nunito Sans',
+                                            fontSize: 14),
+                                      )),
+                                ],
+                              )
+                            ],
+                          )),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  height: SizeConfig.safeBlockVertical * 2,
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: SizeConfig.safeBlockVertical * 2,
+                      vertical: SizeConfig.safeBlockVertical * 2),
+                  child: Align(
+                    alignment: Alignment(0, SizeConfig.safeBlockVertical * -0.09),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                      child: TextFormField(
+                        controller: _controller,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          filled: true,
+                          floatingLabelBehavior: FloatingLabelBehavior.auto,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderSide:
+                            BorderSide(width: 0.5, color: Colors.black),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          hintText: "Write your feedback...",
+                          hintStyle: TextStyle(
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'Nunito Sans',
+                              fontSize: 15),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  height: SizeConfig.safeBlockVertical * 2,
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: SizeConfig.safeBlockVertical * 2,
+                      vertical: SizeConfig.safeBlockVertical * 1),
+                  child: Center(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        customFeedback = _controller.text;
+                        // print("Star Rating is: $starRating");
+                        // print("Experience Rating is: $experienceRating");
+                        // print("Custom Feedback is: $customFeedback");
+                        CrossFeedbackDialog().postFeedback();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Feedback Submitted"),
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                        Navigator.of(context)
+                            .pushReplacementNamed(firstpage.id);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                      ),
+                      child: const Text("Submit"),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        });
+  }
+
   Future<void> _EndDialog() async {
     return showDialog<void>(
       context: context,
       barrierDismissible: false, // user must tap button!
       builder: (BuildContext context) {
         dialogContexts = context;
-        return ChangeNotifierProvider<Data>(
-          create: (BuildContext context) => GetModel(),
-          child: WillPopScope(
+        return WillPopScope(
             onWillPop: () async => false,
             child: AlertDialog(
               backgroundColor: Color.fromARGB(255, 227, 227, 227),
@@ -234,7 +489,7 @@ class _PilotTripState extends State<PilotTrip> {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           Text(
-                            'Your ride is completed! \n\nPlease share this OTP with the passenger!',
+                            'Your ride is completed! \n\nPlease share this OTP with the passenger after the payment!',
                             style: TextStyle(
                                 fontSize: 15,
                                 fontFamily: 'NunitoSans',
@@ -268,7 +523,7 @@ class _PilotTripState extends State<PilotTrip> {
                                             child: SizedBox(
                                                 width: SizeConfig
                                                         .safeBlockHorizontal *
-                                                    15,
+                                                    14,
                                                 child: Center(
                                                     child: Text(
                                                   "${otp[index]}",
@@ -291,7 +546,7 @@ class _PilotTripState extends State<PilotTrip> {
                 ),
               ),
             ),
-          ),
+
         );
       },
     );
@@ -375,7 +630,7 @@ class _PilotTripState extends State<PilotTrip> {
                         'to': HelperVariables.otherPhone,
                         'location': "cancel"
                       }));
-                      Navigator.of(context).pushReplacementNamed(Options.id);
+                      Navigator.of(context).pushReplacementNamed(firstpage.id);
                     },
                     child: Center(
                       child: SizedBox(
@@ -409,7 +664,7 @@ class _PilotTripState extends State<PilotTrip> {
 
   void initailizeWebsocket() async {
     channel = WebSocketChannel.connect(
-        Uri.parse('ws://139.59.44.53:3005?phone=${HelperVariables.Phone}'));
+        Uri.parse('ws://209.38.239.190:3005?phone=${HelperVariables.Phone}'));
     //   try {
     //     channel = WebSocketChannel.connect(
     //         Uri.parse('ws://139.59.44.53:3005?phone=${HelperVariables.Phone}'));
@@ -507,12 +762,13 @@ class _PilotTripState extends State<PilotTrip> {
               child: ListBody(
                 children: const <Widget>[
                   Center(
-                    child: Text('Sorry,your passenger has canceled the ride!',
-                    style: TextStyle(
-                        fontSize: 16.5,
-                        fontFamily: 'Nunito Sans',
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white),
+                    child: Text(
+                      'Sorry,your passenger has canceled the ride!',
+                      style: TextStyle(
+                          fontSize: 16.5,
+                          fontFamily: 'Nunito Sans',
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black),
                     ),
                   )
                 ],
@@ -525,6 +781,7 @@ class _PilotTripState extends State<PilotTrip> {
   }
 
   var checkOnce = 0;
+  var checkEnd = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -556,14 +813,14 @@ class _PilotTripState extends State<PilotTrip> {
                                   _showMyDialog();
                                   Future.delayed(Duration(seconds: 2), () {
                                     Navigator.of(context)
-                                        .pushReplacementNamed(Options.id);
+                                        .pushReplacementNamed(firstpage.id);
                                   });
 
                                   channel!.sink.close();
                                   checkOnce = 1;
                                 } else if (val == 'end') {
-                                  Navigator.of(context)
-                                      .pushReplacementNamed(Options.id);
+                                  _FeedbackDialog();
+
                                 } else {
                                   data[0] = val[0];
                                   data[1] = val[1];
